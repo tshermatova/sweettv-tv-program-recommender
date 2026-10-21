@@ -6,9 +6,15 @@ Spec lives in the conversation as `exam_quiz_GSB.md`; consultation transcript as
 
 ## Where things stand
 
-Best Kaggle result so far — `sub09_lambdarank.csv`, ref 57495736:
-**public 0.43135 / private 0.41924**. The original 2020 winner scored 0.42912, so the
-public score is already past it. 9 submissions made; the daily cap is 99, not 5.
+Best Kaggle result — `sub10_final_3win.csv`, **ref 57497026**,
+submitted 2026-10-21 20:59 UTC: **public 0.44008 / private 0.42787**.
+For scale, the original 2020 winner scored 0.42912, so the public score is past it and
+the private score is level with second place. 10 submissions made; the daily cap is 99,
+not the 5 mentioned in the consultation.
+
+Submission history (public / private):
+0.29788/0.29442 popularity -> 0.41510/0.40302 own repeats -> 0.42449/0.40028 LR hybrid
+-> 0.42846/0.41388 LR 17 feats -> 0.43135/0.41924 LambdaRank -> **0.44008/0.42787 3 windows**.
 
 Hold-out progression (calibrated hold-out, see below):
 popularity 0.40040 -> own repeats 0.48054 -> LR hybrid 0.51141 -> LambdaRank 0.53003 ->
@@ -57,14 +63,15 @@ BLAS oversubscribes on the tiny ALS solves and load average hits 300+ (a 10x slo
 
 ## What is left to do
 
-1. Final model on the winning 3-window configuration -> submit (expect ~0.435 public).
+1. ~~Final model, 3 windows~~ DONE: `src/28_final_3win.py`, 0.44008 public.
+   This is the designated final submission unless something better appears.
 2. `src/26_two_users.py` — section 7, two users, every method's Top-5 with titles.
 3. Section 8 business analysis. **This is what `/arena` was installed for.**
 4. `notebook.ipynb` — optional but worth it for the grader.
 5. Report PDF: GitHub link, screenshot of the returned Kaggle score, method comparison,
    validation table, business analysis.
-6. Push to https://github.com/tshermatova/sweettv-tv-program-recommender
-   (SSH key is passphrase-locked; the user must `ssh-add --apple-use-keychain` once).
+6. ~~Push to GitHub~~ DONE: https://github.com/tshermatova/sweettv-tv-program-recommender
+   (public; SSH works now — the key was added to the GitHub account).
 7. **Revoke the Kaggle token** at https://www.kaggle.com/settings/api before submitting —
    it was pasted into the session as a screenshot and the session export is submitted.
 
