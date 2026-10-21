@@ -1,0 +1,10 @@
+# Competition data — never commit (890 MB, redistributing it would breach the rules)
+data/
+work/
+*.npy
+*.pkl
+*.zip
+__pycache__/
+.ipynb_checkpoints/
+.DS_Store
+.arena/
