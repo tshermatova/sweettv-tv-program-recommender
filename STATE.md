@@ -64,7 +64,11 @@ BLAS oversubscribes on the tiny ALS solves and load average hits 300+ (a 10x slo
 ## What is left to do
 
 1. ~~Final model, 3 windows~~ DONE: `src/28_final_3win.py`, 0.44008 public.
-   This is the designated final submission unless something better appears.
+   **The instructor grades the MOST RECENT submission, not the best one**
+   (consultation 09:01-09:29: "I'm considering your recent submission is your final
+   submission"). `sub10_final_3win.csv` is currently both. If any later experiment
+   scores worse, re-submit `sub10_final_3win.csv` last so it is the most recent again,
+   and take the screenshot only after that.
 2. `src/26_two_users.py` — section 7, two users, every method's Top-5 with titles.
 3. Section 8 business analysis. **This is what `/arena` was installed for.**
 4. `notebook.ipynb` — optional but worth it for the grader.
@@ -80,3 +84,30 @@ BLAS oversubscribes on the tiny ALS solves and load average hits 300+ (a 10x slo
 Every number in the report must come from a run in this repository. No invented
 experiments, no claimed verification that did not happen. Fabrication is an automatic
 fail of the exam.
+
+
+## Model plan for the `/arena` run (agreed with the user before the restart)
+
+The skill launches every sub-agent as `subagent_type: general-purpose` and sets no
+model, so without an explicit choice they all inherit the parent (Opus 5) — 91 Opus
+calls for one report section. Use `--quick` (16 agents, 91 calls) and pass `model`
+per phase on each Agent call:
+
+| phase | calls | model | why |
+| --- | ---: | --- | --- |
+| spawn (16 solutions) | 16 | sonnet | writing argued prose from numbers already supplied |
+| attack / defend | 60 | sonnet | finding holes in a peer's text and answering them |
+| judge | 15 | opus | the judge eliminates competitors; a bad call corrupts the bracket |
+
+Not 100 agents: 595 calls for one section, and strategy-card diversity saturates well
+before that. Not Haiku anywhere: the rubric has five weighted criteria with score
+anchors plus a correctness check, and a weak judge defaults everyone to 7.
+
+**What the arena must be given, and what it must not be believed about.**
+Sub-agents cannot see the conversation or the data — they know only `.arena/task.md`.
+Write every verified number into that brief: final 0.44008 public / 0.42787 private,
+hold-out 0.54464, oracle-in-pool 0.85963, popularity baseline 0.40040 hold-out /
+0.29788 Kaggle, 10.8% labelled airtime, median 67 relevant programmes per user in the
+hold-out window, and the full rejected-hypotheses table above. Any number the winning
+solution adds beyond that brief is invented and must not reach the PDF — check each
+claim against the logs in `work/` before using it. Gate 0 is an automatic fail.
