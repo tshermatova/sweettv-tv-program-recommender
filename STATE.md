@@ -6,44 +6,39 @@ Spec lives in the conversation as `exam_quiz_GSB.md`; consultation transcript as
 
 ## Where things stand
 
-Best Kaggle result — `sub13_feats3_1600.csv`, **ref 57522216**, submitted
-2026-10-22 11:10, description
-"Shermatova Tansuluu - LambdaRank, 41 features, 3 training windows, 1600 trees
-lr 0.015, 5-seed rank average". **public 0.45080 / private 0.43499**. Most recent,
-best, and carrying the full name — the PDF screenshot must show THIS row. 14
-submissions made, cap 99/day.
+Best Kaggle result by the graded metric — `sub14_feats5_1600.csv`, **ref 57532130**,
+submitted 2026-10-22 16:48, named in the description. **public 0.45281 / private
+0.43398**. Most recent, best public, properly named: the PDF screenshot must show
+THIS row. 15 submissions, cap 99/day.
 
-Above first place on the frozen leaderboard on both columns (Magic City: public
-0.44297, private 0.42912, 12 entries, verified from the board itself).
+**Read that number honestly.** sub13 (41 features) scored public 0.45080 / private
+0.43499. So sub14 is +0.0020 on the public half and -0.0010 on the private half.
+Section 10 ranks the cohort by the RETURNED PUBLIC SCORE, so sub14 is the right file
+to submit, but averaging the halves puts the true effect of FEATS5 near +0.0005. Do
+not write "the third feature block improved the model" in the report; write what the
+two halves actually say.
 
-## The capacity result — the only configuration change that survived
+Above first place on the frozen leaderboard (Magic City: public 0.44297, private
+0.42912, verified from the board).
 
-800 trees / lr 0.03 -> **1600 trees / lr 0.015**, everything else unchanged.
+## The hold-out inflates gains, and the factor is not stable
 
-| trees / lr | hold-out A | hold-out B |
-| --- | ---: | ---: |
-| 400 / 0.06 | 0.55447 | 0.52278 |
-| 800 / 0.03 | 0.55662 | 0.52442 |
-| **1600 / 0.015** | 0.55851 | **0.52682** |
-| 3200 / 0.0075 | **0.55911** | 0.52626 |
+| change | hold-out A | hold-out B | Kaggle public | Kaggle private |
+| --- | ---: | ---: | ---: | ---: |
+| FEATS3 (41 features) | +0.0146 | +0.0039 | +0.0099 | +0.0063 |
+| capacity 1600/0.015 | +0.0019 | +0.0024 | +0.0009 | +0.0008 |
+| FEATS4 (51 features) | +0.0027 | +0.0004 | -0.0052 | +0.0000 |
+| FEATS5 (50 features) | +0.0052 | +0.0034 | +0.0020 | -0.0010 |
 
-Monotone on both instruments up to 1600, then B turns down: saturated. Seed sd also
-halved, 0.0032 -> 0.0013, so the shipped model is less of a lottery.
-
-On Kaggle: public 0.44994 -> 0.45080 (+0.00086), private 0.43415 -> 0.43499 (+0.00084).
-**Both halves moved up by the same amount**, which is what a real effect looks like;
-compare the 41-vs-51 comparison, where public said +0.005 and private said -0.00005.
-The hold-out predicted ~+0.0013 after the known 1.5x inflation; +0.00086 arrived.
-Predicted in advance, in both sign and size.
-
-Rejected in the same sweep, on both hold-outs: num_leaves 127 (A -0.0035, B -0.0085),
-num_leaves 15, and objective `rank_xendcg` (A -0.0052, B -0.0020). 31 leaves and
-lambdarank stay.
+Only the capacity change moved both Kaggle halves the same way by the same amount.
+FEATS5 looked like 6-8 sigma on both hold-outs and still split the halves. Treat the
+hold-out as an ordering hint, never as a size estimate, and expect roughly a third of
+what it promises -- sometimes less.
 
 Submission history (public / private):
 0.29788/0.29442 popularity -> 0.41510/0.40302 own repeats -> 0.42449/0.40028 LR hybrid
 -> 0.42846/0.41388 LR 17 feats -> 0.43135/0.41924 LambdaRank -> 0.44008/0.42787 3 windows
--> 0.44994/0.43415 41 features -> **0.45080/0.43499 1600 trees**.
+-> 0.44994/0.43415 41 features -> 0.45080/0.43499 1600 trees -> **0.45281/0.43398 50 features**.
 
 Hold-out progression (calibrated hold-out, see below):
 popularity 0.40040 -> own repeats 0.48054 -> LR hybrid 0.51141 -> LambdaRank 0.53003 ->

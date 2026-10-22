@@ -6,7 +6,7 @@ Two separate things live here because both depend on a time cutoff:
 """
 import sys, os, importlib, numpy as np
 sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
-import lib, features, features2, features3, features4
+import lib, features, features2, features3, features4, features5
 
 cache2 = importlib.import_module("30_cache2")
 chv = importlib.import_module("32_chviews")
@@ -80,6 +80,19 @@ def labels(tag, thr):
     np.save(f, y)
     print(f"   labels {tag:<14} thr={thr}  pos={y.mean():.4f}", flush=True)
     return y
+
+
+def extras5(tag):
+    """The 9 FEATS5 columns: whole-log time profiles, recent channel habit, item stickiness."""
+    f = CACHE + tag + "_x5.npy"
+    if os.path.exists(f):
+        return np.load(f)
+    _, CU, CI, _ = _base(tag)
+    split, hi = geom(tag)
+    X = features5.extra(features.history_arrays(split), CU, CI, split, hi)
+    np.save(f, X)
+    print(f"   extras5 {tag:<14} {X.shape}", flush=True)
+    return X
 
 
 def ch_fix(tag):

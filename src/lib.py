@@ -47,9 +47,17 @@ def popularity(H):
     return p
 
 def apk(actual,pred,k=5):
-    sc=0.0; h=0
+    """AP@k: sum of precision at each relevant rank, over min(k, |actual|).
+
+    Verified against the worked example in the course slides: for relevant {A,B,C},
+    [A,B,D,C,E] -> 0.9167 and [D,A,E,B,C] -> 0.5333. A repeated prediction scores
+    once, as in the standard ml_metrics implementation; without that guard a list
+    with duplicates can exceed 1.0.
+    """
+    sc=0.0; h=0; seen=set()
     for i,p in enumerate(pred[:k]):
-        if p in actual: h+=1; sc+=h/(i+1)
+        if p in actual and p not in seen: h+=1; sc+=h/(i+1)
+        seen.add(p)
     return sc/min(len(actual),k)
 
 def evaluate(preds, gt, users=None):

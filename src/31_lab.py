@@ -18,8 +18,8 @@ MORE = ["s0406_lAB", "s0420_lAB", "s0323_lAB", "s0504_lAB"]
 _cache = {}
 
 
-def load(tag, feats3=False, feats4=False, chfix=False):
-    k = (tag, feats3, feats4, chfix)
+def load(tag, feats3=False, feats4=False, feats5=False, chfix=False):
+    k = (tag, feats3, feats4, feats5, chfix)
     if k in _cache:
         return _cache[k]
     X, CU, CI, y = ex33._base(tag)
@@ -30,17 +30,21 @@ def load(tag, feats3=False, feats4=False, chfix=False):
         X = np.hstack([X, ex33.extras(tag)]).astype(np.float32)
     if feats4:
         X = np.hstack([X, ex33.extras4(tag)]).astype(np.float32)
+    if feats5:
+        X = np.hstack([X, ex33.extras5(tag)]).astype(np.float32)
     _cache[k] = (X, CU, CI, y)
     return _cache[k]
 
 
-def colnames(feats3=False, feats4=False, **_):
-    import features3, features4
+def colnames(feats3=False, feats4=False, feats5=False, **_):
+    import features3, features4, features5
     n = list(features2.FEATS2)
     if feats3:
         n += features3.FEATS3
     if feats4:
         n += features4.FEATS4
+    if feats5:
+        n += features5.FEATS5
     return n
 
 
@@ -446,8 +450,16 @@ def exp_catboost():
                   f"  [{time.time()-_t0:.0f}s]", flush=True)
         del X, y
 
+
+def exp_feats5():
+    """Whole-log time profiles + item stickiness, at the shipped 1600/0.015 capacity."""
+    print("\n[feats5] third block, on top of the shipped 41 features, A and B")
+    big = dict(n_estimators=1600, learning_rate=0.015)
+    run2("41 (shipped)", opt=dict(feats3=True), **big)
+    run2("50 = 41 + FEATS5", opt=dict(feats3=True, feats5=True), **big)
+
 EXP = {"baseline": exp_baseline, "trunc": exp_trunc, "feats3": exp_feats3,
-       "feats4": exp_feats4, "prune": exp_prune, "validate2": exp_validate2, "bigknobs": exp_bigknobs, "capacity2": exp_capacity2, "labels": exp_labels, "fuse": exp_fuse, "catboost": exp_catboost, "wweight": exp_wweight,
+       "feats4": exp_feats4, "prune": exp_prune, "validate2": exp_validate2, "bigknobs": exp_bigknobs, "capacity2": exp_capacity2, "labels": exp_labels, "fuse": exp_fuse, "catboost": exp_catboost, "feats5": exp_feats5, "wweight": exp_wweight,
        "chfix": exp_chfix, "windows": exp_windows, "capacity": exp_capacity,
        "seeds": exp_seeds, "seeds3": exp_seeds3, "windows3": exp_windows3,
        "ablate": exp_ablate}

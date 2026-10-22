@@ -19,7 +19,7 @@ _t0 = time.time()
 
 N_SEEDS = int(sys.argv[sys.argv.index("--seeds") + 1]) if "--seeds" in sys.argv else 1
 NAME = sys.argv[sys.argv.index("--name") + 1] if "--name" in sys.argv else "sub11_feats3_3win"
-OPT = dict(feats3=True, feats4="--feats4" in sys.argv)
+OPT = dict(feats3=True, feats4="--feats4" in sys.argv, feats5="--feats5" in sys.argv)
 
 print(f"building final-regime datasets [{time.time()-_t0:.0f}s]", flush=True)
 X, y, g = lab.stack(cache2.FINAL_WIN, **OPT)
