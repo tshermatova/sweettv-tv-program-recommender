@@ -93,7 +93,7 @@ GT2 = lib.target(lo=cache2.B_EVAL2, hi=lib.B_AB)
 EVAL2 = cache2.EVAL2_WIN
 
 
-def run2(name, opt=None, n=3, drop=None, **kw):
+def run2(name, opt=None, n=3, drop=None, thr=None, wweight=None, **kw):
     """Score a configuration on BOTH hold-outs and report each.
 
     One window has fooled us four times: a change that wins on the 05-18..07-27 target
@@ -112,16 +112,20 @@ def run2(name, opt=None, n=3, drop=None, **kw):
         Xe = Xo if keep is None else Xo[:, keep]
         out = []
         for i in range(n):
-            Xs, ys, Cs, off = [], [], [], 0
-            for t in tags:
+            Xs, ys, Cs, Ws, off = [], [], [], [], 0
+            for wi, t in enumerate(tags):
                 X, CU, CI, y = load(t, **opt)
+                if thr is not None:
+                    y = ex33.labels(t, thr)
                 Xs.append(X if keep is None else X[:, keep])
                 ys.append(y); Cs.append(CU.astype(np.int64) + off); off += lib.N_USERS
+                Ws.append(np.full(len(CU), wweight[wi] if wweight else 1.0, np.float32))
             X = np.vstack(Xs); y = np.concatenate(ys); C = np.concatenate(Cs)
-            o = np.argsort(C, kind="stable"); X, y, C = X[o], y[o], C[o]
+            W = np.concatenate(Ws)
+            o = np.argsort(C, kind="stable"); X, y, C, W = X[o], y[o], C[o], W[o]
             g = np.diff(np.flatnonzero(np.r_[True, C[1:] != C[:-1], True]))
             p = dict(PARAMS); p["random_state"] = lib.SEED + 1000 * i; p.update(kw)
-            m = lgb.LGBMRanker(**p).fit(X, y, group=g)
+            m = lgb.LGBMRanker(**p).fit(X, y, group=g, sample_weight=W)
             out.append(lib.evaluate(features.top5(m.predict(Xe), CUo, CIo, FB), gt))
             del X, y, C, m
         return np.array(out)
@@ -338,8 +342,112 @@ def exp_capacity2():
     run2("1600 trees, lr 0.015 (current best)", opt=o, n_estimators=1600, learning_rate=0.015)
     run2("3200 trees, lr 0.0075", opt=o, n_estimators=3200, learning_rate=0.0075)
 
+
+def exp_labels():
+    """Threshold that counts as 'watched' when building the TRAINING label.
+
+    Shipped: FRAC >= 1.0, ~3.5% positives. The evaluation target stays at 1.0 in both
+    hold-outs -- only the training signal changes, so this asks whether the ranker
+    learns better from more, noisier positives.
+    """
+    print("\n[labels] training-label threshold (evaluation target unchanged)")
+    o = dict(feats3=True)
+    run2("thr 1.00 (shipped)", opt=o)
+    run2("thr 0.80", opt=o, thr=0.80)
+    run2("thr 0.50", opt=o, thr=0.50)
+    run2("thr 0.20", opt=o, thr=0.20)
+
+
+def exp_wweight():
+    """Windows are currently equal. The latest window is closest in time to the target."""
+    print("\n[wweight] weighting the three training windows (order: s0413, s0330, s0427)")
+    o = dict(feats3=True)
+    run2("equal (shipped)", opt=o)
+    run2("favour the latest window 1:1:2", opt=o, wweight=[1.0, 1.0, 2.0])
+    run2("favour the latest window 1:0.5:2", opt=o, wweight=[1.0, 0.5, 2.0])
+
+
+def exp_fuse():
+    """Rank-fuse two models trained on DIFFERENT feature sets.
+
+    Averaging seeds of one model bought +0.0006 -- nothing, because the fits make the
+    same mistakes. 41 and 51 features are indistinguishable in score (Kaggle public
+    +0.005 one way, private -0.00005 the other) but are built from different inputs,
+    so their mistakes need not coincide. That is the condition under which fusion pays.
+    """
+    print("\n[fuse] rank-average of the 41-feature and 51-feature rankers, A and B")
+    specs = [("41", dict(feats3=True)), ("51", dict(feats3=True, feats4=True))]
+
+    for tags, eval_tag, gt, which in [(BASE, "outer", GT, "A"), (EVAL2, "outer2", GT2, "B")]:
+        z = np.load(cache2.CACHE + eval_tag + ".npz")
+        FB = [int(lib.ITEMS_ALL[k]) for k in np.argsort(-z["pop_u"])[:5]]
+        per, fused = {k: [] for k, _ in specs}, []
+        for i in range(3):
+            ranks = []
+            for nm, opt in specs:
+                X, y, g = stack(tags, **opt)
+                Xo, CUo, CIo, _ = load(eval_tag, **opt)
+                p = dict(PARAMS); p["random_state"] = lib.SEED + 1000 * i
+                m = lgb.LGBMRanker(**p).fit(X, y, group=g)
+                v = m.predict(Xo)
+                per[nm].append(lib.evaluate(features.top5(v, CUo, CIo, FB), gt))
+                ranks.append(rank_norm(v, CUo))
+                del X, y, m
+            fused.append(lib.evaluate(
+                features.top5(sum(ranks), CUo, CIo, FB), gt))
+        for nm, _ in specs:
+            a = np.array(per[nm])
+            print(f"  [{which}] {nm} alone              {a.mean():.5f}+-{a.std():.5f}", flush=True)
+        a = np.array(fused)
+        print(f"  [{which}] 41+51 fused            {a.mean():.5f}+-{a.std():.5f}"
+              f"  [{time.time()-_t0:.0f}s]", flush=True)
+
+
+def exp_catboost():
+    """A genuinely different family: CatBoost YetiRank.
+
+    The 41/51 fusion failed because 51 is 41 plus ten inert columns -- the two models
+    were never independent. CatBoost builds oblivious trees and optimises a different
+    ranking loss, so its mistakes have a real chance of falling elsewhere. Measured
+    alone first, then fused with LightGBM.
+    """
+    from catboost import CatBoostRanker, Pool
+    print("\n[catboost] YetiRank alone, and fused with LambdaRank, on 41 features")
+    o = dict(feats3=True)
+    for tags, eval_tag, gt, which in [(BASE, "outer", GT, "A"), (EVAL2, "outer2", GT2, "B")]:
+        z = np.load(cache2.CACHE + eval_tag + ".npz")
+        FB = [int(lib.ITEMS_ALL[k]) for k in np.argsort(-z["pop_u"])[:5]]
+        X, y, g = stack(tags, **o)
+        grp = np.repeat(np.arange(len(g)), g)
+        Xo, CUo, CIo, _ = load(eval_tag, **o)
+        og = np.argsort(CUo, kind="stable")
+        inv = np.empty(len(og), np.int64); inv[og] = np.arange(len(og))
+        pool = Pool(X, label=y, group_id=grp)
+        epool = Pool(Xo[og], group_id=CUo[og])
+        cb, lg = [], []
+        for i in range(3):
+            m = CatBoostRanker(loss_function="YetiRank", iterations=800, depth=6,
+                               learning_rate=0.05, random_seed=lib.SEED + 1000 * i,
+                               verbose=0, thread_count=3, allow_writing_files=False)
+            m.fit(pool)
+            v = m.predict(epool)[inv]
+            cb.append((lib.evaluate(features.top5(v, CUo, CIo, FB), gt), rank_norm(v, CUo)))
+            p2 = dict(PARAMS); p2["random_state"] = lib.SEED + 1000 * i
+            ml = lgb.LGBMRanker(**p2).fit(X, y, group=g)
+            vl = ml.predict(Xo)
+            lg.append((lib.evaluate(features.top5(vl, CUo, CIo, FB), gt), rank_norm(vl, CUo)))
+            del m, ml
+        fu = [lib.evaluate(features.top5(a[1] + b[1], CUo, CIo, FB), gt)
+              for a, b in zip(cb, lg)]
+        for nm, arr in [("LightGBM", [a[0] for a in lg]), ("CatBoost", [a[0] for a in cb]),
+                        ("fused", fu)]:
+            a = np.array(arr)
+            print(f"  [{which}] {nm:<9} {a.mean():.5f}+-{a.std():.5f}"
+                  f"  [{time.time()-_t0:.0f}s]", flush=True)
+        del X, y
+
 EXP = {"baseline": exp_baseline, "trunc": exp_trunc, "feats3": exp_feats3,
-       "feats4": exp_feats4, "prune": exp_prune, "validate2": exp_validate2, "bigknobs": exp_bigknobs, "capacity2": exp_capacity2,
+       "feats4": exp_feats4, "prune": exp_prune, "validate2": exp_validate2, "bigknobs": exp_bigknobs, "capacity2": exp_capacity2, "labels": exp_labels, "fuse": exp_fuse, "catboost": exp_catboost, "wweight": exp_wweight,
        "chfix": exp_chfix, "windows": exp_windows, "capacity": exp_capacity,
        "seeds": exp_seeds, "seeds3": exp_seeds3, "windows3": exp_windows3,
        "ablate": exp_ablate}

@@ -60,6 +60,28 @@ def extras4(tag):
     return X
 
 
+def labels(tag, thr):
+    """Recompute y at a different 'watched' threshold.
+
+    The shipped label is FRAC >= 1.0 (the user's interval covered the whole programme),
+    which leaves only ~3.5% positives. The feature matrix does not depend on the label,
+    so a different threshold costs a set lookup, not a cache rebuild.
+    """
+    f = CACHE + f"{tag}_y{int(thr*100)}.npy"
+    if os.path.exists(f):
+        return np.load(f)
+    _, CU, CI, _ = _base(tag)
+    split, hi = geom(tag)
+    m = (lib.FRAC >= thr) & (lib.PST >= split) & (lib.PST < hi)
+    pos = set(np.unique(lib.UI[m].astype(np.int64) * lib.N_ITEMS
+                        + lib.SIDX[m].astype(np.int64)).tolist())
+    y = np.fromiter((1 if (int(a) * lib.N_ITEMS + int(b)) in pos else 0
+                     for a, b in zip(CU, CI)), np.int8, len(CU))
+    np.save(f, y)
+    print(f"   labels {tag:<14} thr={thr}  pos={y.mean():.4f}", flush=True)
+    return y
+
+
 def ch_fix(tag):
     """Recompute FEATS2 columns 21 (ch_aff) and 22 (ch_rank) with history-only channel views."""
     f = CACHE + tag + "_chfix.npy"

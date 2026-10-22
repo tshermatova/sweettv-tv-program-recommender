@@ -153,6 +153,39 @@ came from the future**.
 does not depend on the leak. Use the honest regime to SELECT between configurations;
 ship the ordinary one, which is legitimate at final-fit time.
 
+## Directions tried on 2026-10-22 and closed (all on both hold-outs, 3 seeds)
+
+| direction | A | B | verdict |
+| --- | --- | --- | --- |
+| capacity 1600 trees / lr 0.015 | +0.0019 | +0.0024 | **ACCEPTED**, shipped, +0.0009 on Kaggle |
+| capacity 3200 / lr 0.0075 | +0.0006 | -0.0006 | saturated, 1600 is the optimum |
+| num_leaves 127 | -0.0035 | -0.0085 | rejected, overfits |
+| num_leaves 15 | -0.0017 | +0.0004 | rejected |
+| objective rank_xendcg | -0.0052 | -0.0020 | rejected |
+| training-label threshold 0.8 / 0.5 / 0.2 | -0.005 / -0.016 / -0.035 | -0.002 / -0.016 / -0.032 | rejected, monotone both ways |
+| window weights 1:1:2 | +0.0002 | -0.0004 | nothing |
+| window weights 1:0.5:2 | +0.0019 | -0.0021 | **rejected — A says yes, B says no** |
+| fusion of the 41- and 51-feature rankers | lands between them | +0.0009 | rejected |
+| CatBoost YetiRank alone | -0.0025 | +0.0026 | sign flips: noise |
+| CatBoost + LightGBM fused | +0.0015 | +0.0030 | borderline, NOT tested on Kaggle |
+
+Two of these are worth remembering for the report.
+
+**The training label must stay strict.** Lowering the "watched" threshold from 1.0
+gives many more positives (3.5% is thin) and hurts monotonically on both instruments,
+badly: -0.035 on A at thr 0.2. A 20%-overlap view is channel-surfing, and a model
+trained on those learns to predict tune-ins rather than viewings. Watch completeness
+matters twice over: `frac_mean` is one of the two features that carry the gain, and
+the same quantity defines what counts as success.
+
+**The window-weight experiment is why the second hold-out exists.** 1:0.5:2 reads as
++0.0019 on A, the same size as the capacity gain that was accepted — and B falls by
+-0.0021 at the same time. Measured on A alone it would have been shipped.
+
+What is left untried: candidate-pool size (n_pop 80 -> 160, needs a full cache rebuild)
+and taking the borderline CatBoost fusion to Kaggle (~2h of compute for an expected
++0.001, which is below Kaggle's own half-to-half noise of 0.005).
+
 ## Decisions already settled (do not re-litigate)
 
 | question | answer | evidence |
