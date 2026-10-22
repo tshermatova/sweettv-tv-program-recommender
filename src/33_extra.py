@@ -13,20 +13,24 @@ chv = importlib.import_module("32_chviews")
 CACHE = lib.W + "ds2/"
 
 
+# evaluation sets are not in WIN: they carry no labels and their own builder
+EVALSETS = {
+    "outer":  (lambda: (lib.B_AB, lib.B_TEST),      lambda: cache2.outer()),
+    "outer2": (lambda: (cache2.B_EVAL2, lib.B_AB),  lambda: cache2.outer2()),
+    "final":  (lambda: (lib.B_TEST, cache2.T_END),  lambda: cache2.final()),
+}
+
+
 def geom(tag):
     """(history cut, airing-window end) for a cached dataset tag."""
-    if tag == "outer":
-        return lib.B_AB, lib.B_TEST
-    if tag == "final":
-        return lib.B_TEST, cache2.T_END
+    if tag in EVALSETS:
+        return EVALSETS[tag][0]()
     return cache2.WIN[tag]
 
 
 def _base(tag):
-    if tag == "outer":
-        return cache2.outer()
-    if tag == "final":
-        return cache2.final()
+    if tag in EVALSETS:
+        return EVALSETS[tag][1]()
     return cache2.get(tag)
 
 

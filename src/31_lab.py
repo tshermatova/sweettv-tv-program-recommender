@@ -89,6 +89,64 @@ def run(name, tags=BASE, opt=None, **kw):
     return s, m
 
 
+GT2 = lib.target(lo=cache2.B_EVAL2, hi=lib.B_AB)
+EVAL2 = cache2.EVAL2_WIN
+
+
+def run2(name, opt=None, n=3, drop=None, **kw):
+    """Score a configuration on BOTH hold-outs and report each.
+
+    One window has fooled us four times: a change that wins on the 05-18..07-27 target
+    by less than ~0.005 has repeatedly failed on Kaggle. A change is only believed here
+    when it wins on the 04-13..05-18 target as well, fitted on windows that end before
+    that target starts.
+    """
+    opt = opt or {}
+    names = colnames(**opt)
+    keep = [i for i, c in enumerate(names) if c not in drop] if drop else None
+
+    def one(tags, eval_tag, gt):
+        Xo, CUo, CIo, _ = load(eval_tag, **opt)
+        z = np.load(cache2.CACHE + eval_tag + ".npz")
+        FB = [int(lib.ITEMS_ALL[k]) for k in np.argsort(-z["pop_u"])[:5]]
+        Xe = Xo if keep is None else Xo[:, keep]
+        out = []
+        for i in range(n):
+            Xs, ys, Cs, off = [], [], [], 0
+            for t in tags:
+                X, CU, CI, y = load(t, **opt)
+                Xs.append(X if keep is None else X[:, keep])
+                ys.append(y); Cs.append(CU.astype(np.int64) + off); off += lib.N_USERS
+            X = np.vstack(Xs); y = np.concatenate(ys); C = np.concatenate(Cs)
+            o = np.argsort(C, kind="stable"); X, y, C = X[o], y[o], C[o]
+            g = np.diff(np.flatnonzero(np.r_[True, C[1:] != C[:-1], True]))
+            p = dict(PARAMS); p["random_state"] = lib.SEED + 1000 * i; p.update(kw)
+            m = lgb.LGBMRanker(**p).fit(X, y, group=g)
+            out.append(lib.evaluate(features.top5(m.predict(Xe), CUo, CIo, FB), gt))
+            del X, y, C, m
+        return np.array(out)
+
+    a = one(BASE, "outer", GT)
+    b = one(EVAL2, "outer2", GT2)
+    print(f"  {name:<40} A {a.mean():.5f}+-{a.std():.5f}   "
+          f"B {b.mean():.5f}+-{b.std():.5f}  [{time.time()-_t0:.0f}s]", flush=True)
+    return a.mean(), b.mean()
+
+
+def exp_validate2():
+    """Does the second instrument reproduce Kaggle's verdict on 30 / 41 / 51?
+
+    Kaggle said: 30 (0.44008) < 41 (0.44994) > 51 (0.44472). Hold-out A said
+    30 < 41 < 51, which is where it went wrong. If B puts 51 below 41, B is worth
+    trusting; if it agrees with A, the second window adds nothing and is dropped.
+    """
+    print("\n[validate2] calibrating the second hold-out against what Kaggle already told us")
+    print("            Kaggle: 30 -> 0.44008,  41 -> 0.44994,  51 -> 0.44472")
+    run2("30 base", opt=dict())
+    run2("41 = base + FEATS3", opt=dict(feats3=True))
+    run2("51 = base + FEATS3 + FEATS4", opt=dict(feats3=True, feats4=True))
+
+
 def runm(name, tags=BASE, opt=None, n=3, drop=None, **kw):
     """Mean of n seeds. The seed-to-seed sd is 0.00178, so a single fit cannot
     separate configurations that differ by less than ~0.005. Everything from here
@@ -237,6 +295,23 @@ def exp_ablate():
 DEAD = ["streak", "frac_max", "own7", "last_week"]   # positive leave-one-out deltas
 
 
+def exp_bigknobs():
+    """Only changes big enough to clear the noise. Both hold-outs, 3 seeds each.
+
+    Measured noise: seed sd 0.00178 on A, and Kaggle's own public/private halves
+    disagree by 0.005 on the SAME pair of models. So anything under ~0.005 that does
+    not move both A and B in the same direction is not a result.
+    """
+    print("\n[bigknobs] capacity and objective, on 41 features, A and B")
+    o = dict(feats3=True)
+    run2("reference: 800 trees / 31 leaves / lr .03", opt=o)
+    run2("1600 trees, lr 0.015", opt=o, n_estimators=1600, learning_rate=0.015)
+    run2("400 trees, lr 0.06", opt=o, n_estimators=400, learning_rate=0.06)
+    run2("num_leaves 127", opt=o, num_leaves=127)
+    run2("num_leaves 15", opt=o, num_leaves=15)
+    run2("objective rank_xendcg", opt=o, objective="rank_xendcg")
+
+
 def exp_feats4():
     print("\n[feats4] the second added block, 3 seeds per configuration")
     runm("30 base", opt=dict())
@@ -254,8 +329,17 @@ def exp_prune():
     runm("51 minus dead", opt=dict(feats3=True, feats4=True), drop=DEAD)
 
 
+
+def exp_capacity2():
+    """Is the capacity trend real, or does it saturate? 400/800/1600 rose monotonically
+    on BOTH hold-outs, which noise does not do. Push one more doubling."""
+    print("\n[capacity2] does more capacity keep paying, on 41 features, A and B")
+    o = dict(feats3=True)
+    run2("1600 trees, lr 0.015 (current best)", opt=o, n_estimators=1600, learning_rate=0.015)
+    run2("3200 trees, lr 0.0075", opt=o, n_estimators=3200, learning_rate=0.0075)
+
 EXP = {"baseline": exp_baseline, "trunc": exp_trunc, "feats3": exp_feats3,
-       "feats4": exp_feats4, "prune": exp_prune,
+       "feats4": exp_feats4, "prune": exp_prune, "validate2": exp_validate2, "bigknobs": exp_bigknobs, "capacity2": exp_capacity2,
        "chfix": exp_chfix, "windows": exp_windows, "capacity": exp_capacity,
        "seeds": exp_seeds, "seeds3": exp_seeds3, "windows3": exp_windows3,
        "ablate": exp_ablate}

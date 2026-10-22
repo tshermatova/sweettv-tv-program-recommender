@@ -6,27 +6,44 @@ Spec lives in the conversation as `exam_quiz_GSB.md`; consultation transcript as
 
 ## Where things stand
 
-Best Kaggle result — `sub11_feats3_3win.csv`, **ref 57514552**, re-submitted
-2026-10-22 07:07 with the description
-"Shermatova Tansuluu - FINAL. LambdaRank, 41 features, 3 training windows, 5-seed
-rank average". **public 0.44994 / private 0.43415**. It is the most recent, the best,
-and the only one carrying the full name the instructor asked for, so the screenshot
-for the PDF must show THIS row (ref 57514552), not the earlier 57499460 whose
-description was just the file name. 13 submissions made; the cap is 99 per day.
+Best Kaggle result — `sub13_feats3_1600.csv`, **ref 57522216**, submitted
+2026-10-22 11:10, description
+"Shermatova Tansuluu - LambdaRank, 41 features, 3 training windows, 1600 trees
+lr 0.015, 5-seed rank average". **public 0.45080 / private 0.43499**. Most recent,
+best, and carrying the full name — the PDF screenshot must show THIS row. 14
+submissions made, cap 99/day.
 
-Verified against the frozen leaderboard itself on 2026-10-22 (screenshots in the
-session, both tabs): team **Magic City**, 1st place, public **0.44297**, private
-**0.42912**, 12 entries. Our 0.44994 / 0.43415 is above first place on BOTH columns.
-State it in the report with these caveats: the board is frozen so we never appear on
-it; we had late-submission feedback over 11 attempts against the public half; the
-private half we saw only twice, so the private margin is not public-score overfitting.
-(An earlier note in this file compared our PUBLIC score to that private figure, which
-was wrong -- always compare like with like.)
+Above first place on the frozen leaderboard on both columns (Magic City: public
+0.44297, private 0.42912, 12 entries, verified from the board itself).
+
+## The capacity result — the only configuration change that survived
+
+800 trees / lr 0.03 -> **1600 trees / lr 0.015**, everything else unchanged.
+
+| trees / lr | hold-out A | hold-out B |
+| --- | ---: | ---: |
+| 400 / 0.06 | 0.55447 | 0.52278 |
+| 800 / 0.03 | 0.55662 | 0.52442 |
+| **1600 / 0.015** | 0.55851 | **0.52682** |
+| 3200 / 0.0075 | **0.55911** | 0.52626 |
+
+Monotone on both instruments up to 1600, then B turns down: saturated. Seed sd also
+halved, 0.0032 -> 0.0013, so the shipped model is less of a lottery.
+
+On Kaggle: public 0.44994 -> 0.45080 (+0.00086), private 0.43415 -> 0.43499 (+0.00084).
+**Both halves moved up by the same amount**, which is what a real effect looks like;
+compare the 41-vs-51 comparison, where public said +0.005 and private said -0.00005.
+The hold-out predicted ~+0.0013 after the known 1.5x inflation; +0.00086 arrived.
+Predicted in advance, in both sign and size.
+
+Rejected in the same sweep, on both hold-outs: num_leaves 127 (A -0.0035, B -0.0085),
+num_leaves 15, and objective `rank_xendcg` (A -0.0052, B -0.0020). 31 leaves and
+lambdarank stay.
 
 Submission history (public / private):
 0.29788/0.29442 popularity -> 0.41510/0.40302 own repeats -> 0.42449/0.40028 LR hybrid
 -> 0.42846/0.41388 LR 17 feats -> 0.43135/0.41924 LambdaRank -> 0.44008/0.42787 3 windows
--> **0.44994/0.43415 41 features**.
+-> 0.44994/0.43415 41 features -> **0.45080/0.43499 1600 trees**.
 
 Hold-out progression (calibrated hold-out, see below):
 popularity 0.40040 -> own repeats 0.48054 -> LR hybrid 0.51141 -> LambdaRank 0.53003 ->
@@ -59,12 +76,23 @@ Hold-out, 3 seeds each: 30 base 0.54198 +- 0.00110, 41 (+FEATS3) 0.55662 +- 0.00
 51 (+FEATS3+FEATS4) 0.55933 +- 0.00117, 40 (base+FEATS4 only) 0.54967 +- 0.00085.
 So FEATS4 looked worth +0.0027 over FEATS3.
 
-**It did not transfer.** `sub12_feats4_3win.csv` (ref 57514526) scored public 0.44472
-vs sub11's 0.44994 — **worse by 0.0052** — with private identical to 5 decimal places
-(0.43420 vs 0.43415). Do not revisit: this is the third time a sub-0.003 hold-out gain
-evaporated, and the first time it did so with three seeds behind it. Treat 3 seeds as
-the minimum, and treat anything under ~0.005 on the hold-out as unproven regardless of
-how many seeds support it.
+**CORRECTION (2026-10-22, later).** The first reading of this was wrong and is kept
+here because the mistake matters more than the conclusion.
+
+`sub12_feats4_3win.csv` (ref 57514526) scored public 0.44472 vs sub11's 0.44994 and I
+called FEATS4 rejected. But the private halves are 0.43420 vs 0.43415 — **identical to
+five decimals**. Public and private are two ~630-user halves of the same test set, and
+41 beats 51 by 0.005 on one half while losing by 0.00005 on the other. That is the
+signature of sampling noise, not of a better model. The honest conclusion is that
+**41 and 51 are indistinguishable**, not that 51 is worse. Declaring a winner from one
+public score is the same error as believing a one-seed hold-out delta.
+
+**This is the real finding of the day: measurement noise now exceeds the size of the
+improvements this setup can produce.** Seed sd on hold-out A is 0.00178; Kaggle's own
+two halves disagree by 0.005 on the same pair of models. Four "gains" have already
+evaporated (truncation_level, one-seed ablation, the fifth window, FEATS4). Do not run
+small-amplitude experiments any more — their results are unreadable. Only test changes
+that could plausibly move the score by well over 0.005.
 
 Pruning the FEATS3 columns whose single-seed leave-one-out delta was positive
 (streak, frac_max, own7, last_week) changed nothing: 41 full 0.55662 vs 41 pruned
@@ -84,6 +112,31 @@ ch_air_aff (user's channel shares against the channels the programme airs on), s
 In the final fit `ch_air_aff` is the 2nd most used feature of 41, `frac_mean` 5th,
 `slot_aff` 10th. Which of them carry the gain is NOT yet measured — the leave-one-out
 ablation (`src/31_lab.py ablate`) has not been run.
+
+## A SECOND hold-out was built, and it failed its calibration
+
+`src/30_cache2.py` EVAL2_WIN + `outer2`: target 2020-04-13..B_AB, every training window
+ending before 04-13, same 1 260 users (1 178 of them have truth there, median 8
+relevant). `src/31_lab.py run2` scores a configuration on both. The idea was that a
+change should have to win on two different windows.
+
+It does not work, and the calibration says so. Against the answer Kaggle had already
+given (30 -> 0.44008, 41 -> 0.44994, 51 -> 0.44472):
+
+| | hold-out A | hold-out B | Kaggle public |
+| --- | ---: | ---: | ---: |
+| 30 features | 0.54198 | 0.52055 | 0.44008 |
+| 41 features | 0.55662 | 0.52442 | 0.44994 |
+| 51 features | 0.55933 | 0.52484 | 0.44472 |
+
+B ranks 51 above 41, exactly as A does. It reproduces A's verdict, not Kaggle's, so it
+adds no independent information about that pair.
+
+B is also not a clean second window: its training windows carry 2-3 weeks of history
+against A's 7-9, so habit-shape features have far less to work with. FEATS3 is worth
++0.0146 on A, +0.0039 on B, and +0.0099 on Kaggle — A over-states it, B under-states
+it. Keep B as a fragility check (does a change depend on long histories?), not as a
+second opinion of equal weight.
 
 ## A leak in the hold-out, found 2026-10-22
 

@@ -32,7 +32,15 @@ WIN = {
     "f0608_l0713": (ts(2020, 6, 8),  ts(2020, 7, 13)),
     "f0622_lT":    (ts(2020, 6, 22), lib.B_TEST),
     "f0706_lT":    (ts(2020, 7, 6),  lib.B_TEST),
+    # SECOND hold-out, five weeks earlier: target 04-13..B_AB, everything that feeds it
+    # ends before 04-13. A change is only believed when it wins on both instruments.
+    "e0323_l0413": (ts(2020, 3, 23), ts(2020, 4, 13)),
+    "e0330_l0413": (ts(2020, 3, 30), ts(2020, 4, 13)),
+    "e0406_l0413": (ts(2020, 4, 6),  ts(2020, 4, 13)),
 }
+
+B_EVAL2 = ts(2020, 4, 13)
+EVAL2_WIN = ["e0330_l0413", "e0323_l0413", "e0406_l0413"]
 
 T_END = int(np.load(lib.W + "airings_raw.npy")[-1, 2]) + 1
 FINAL_WIN = ["f0608_l0713", "f0622_lT", "f0706_lT"]
@@ -69,6 +77,11 @@ def get(tag):
 def outer():
     """Evaluation set: the 1 260 test users, scored against the hold-out ground truth."""
     return build("outer", lib.B_AB, lib.B_TEST, label=False, users=lib.TEST_UI)
+
+
+def outer2():
+    """Second evaluation set: same 1 260 users, target window 04-13..B_AB."""
+    return build("outer2", B_EVAL2, lib.B_AB, label=False, users=lib.TEST_UI)
 
 
 def final():

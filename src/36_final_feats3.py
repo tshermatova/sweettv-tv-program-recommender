@@ -34,6 +34,9 @@ print(f"prediction set: {Xt.shape} fallback={FB} [{time.time()-_t0:.0f}s]", flus
 acc = np.zeros(len(CUt))
 for i in range(N_SEEDS):
     p = dict(lab.PARAMS); p["random_state"] = lib.SEED + 1000 * i
+    if "--big" in sys.argv:          # 1600/0.015: the one configuration change that
+        p["n_estimators"] = 1600     # survived both hold-outs and a monotone sweep
+        p["learning_rate"] = 0.015
     m = lgb.LGBMRanker(**p).fit(X, y, group=g)
     acc += lab.rank_norm(m.predict(Xt), CUt)
     print(f"  seed {i} fitted [{time.time()-_t0:.0f}s]", flush=True)
