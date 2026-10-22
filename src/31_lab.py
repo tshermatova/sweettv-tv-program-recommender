@@ -1,0 +1,266 @@
+"""Experiment harness on the calibrated hold-out. Every number printed here is a run.
+
+Usage:  python3 src/31_lab.py <experiment> [<experiment> ...]
+"""
+import sys, time, importlib, numpy as np
+sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
+import lib, features, features2
+import lightgbm as lgb
+
+cache2 = importlib.import_module("30_cache2")
+ex33 = importlib.import_module("33_extra")
+_t0 = time.time()
+
+GT = lib.target(lo=lib.B_AB, hi=lib.B_TEST)
+BASE = ["s0413_lAB", "s0330_l0504", "s0427_lAB"]   # the recorded 3-window geometry
+MORE = ["s0406_lAB", "s0420_lAB", "s0323_lAB", "s0504_lAB"]
+
+_cache = {}
+
+
+def load(tag, feats3=False, feats4=False, chfix=False):
+    k = (tag, feats3, feats4, chfix)
+    if k in _cache:
+        return _cache[k]
+    X, CU, CI, y = ex33._base(tag)
+    X = X.copy()
+    if chfix:
+        X[:, 21:23] = ex33.ch_fix(tag)
+    if feats3:
+        X = np.hstack([X, ex33.extras(tag)]).astype(np.float32)
+    if feats4:
+        X = np.hstack([X, ex33.extras4(tag)]).astype(np.float32)
+    _cache[k] = (X, CU, CI, y)
+    return _cache[k]
+
+
+def colnames(feats3=False, feats4=False, **_):
+    import features3, features4
+    n = list(features2.FEATS2)
+    if feats3:
+        n += features3.FEATS3
+    if feats4:
+        n += features4.FEATS4
+    return n
+
+
+def evalset(**opt):
+    X, CU, CI, _ = load("outer", **opt)
+    return X, CU, CI, cache2.fallback()
+
+
+def stack(tags, **opt):
+    """Concatenate cached windows, offsetting user ids so groups never merge."""
+    Xs, ys, Cs, off = [], [], [], 0
+    for t in tags:
+        X, CU, CI, y = load(t, **opt)
+        Xs.append(X); ys.append(y); Cs.append(CU.astype(np.int64) + off)
+        off += lib.N_USERS
+    X = np.vstack(Xs); y = np.concatenate(ys); C = np.concatenate(Cs)
+    o = np.argsort(C, kind="stable")
+    X, y, C = X[o], y[o], C[o]
+    g = np.diff(np.flatnonzero(np.r_[True, C[1:] != C[:-1], True]))
+    return X, y, g
+
+
+PARAMS = dict(objective="lambdarank", metric="map", eval_at=[5], learning_rate=0.03,
+              num_leaves=31, n_estimators=800, min_child_samples=50, subsample=0.8,
+              subsample_freq=1, colsample_bytree=0.8, random_state=lib.SEED,
+              verbose=-1, n_jobs=3)   # fanless M1 Air: leave a core free, it throttles
+
+
+def fit(tags=BASE, opt=None, **kw):
+    X, y, g = stack(tags, **(opt or {}))
+    p = dict(PARAMS); p.update(kw)
+    return lgb.LGBMRanker(**p).fit(X, y, group=g)
+
+
+def score_of(raw, opt=None):
+    _, CUo, CIo, FB = evalset(**(opt or {}))
+    return lib.evaluate(features.top5(raw, CUo, CIo, FB), GT)
+
+
+def run(name, tags=BASE, opt=None, **kw):
+    opt = opt or {}
+    m = fit(tags, opt, **kw)
+    Xo, _, _, _ = evalset(**opt)
+    s = score_of(m.predict(Xo), opt)
+    print(f"  {name:<52} MAP@5 = {s:.5f}  [{time.time()-_t0:.0f}s]", flush=True)
+    return s, m
+
+
+def runm(name, tags=BASE, opt=None, n=3, drop=None, **kw):
+    """Mean of n seeds. The seed-to-seed sd is 0.00178, so a single fit cannot
+    separate configurations that differ by less than ~0.005. Everything from here
+    on is measured this way."""
+    opt = opt or {}
+    names = colnames(**opt)
+    keep = None
+    if drop:
+        keep = [i for i, c in enumerate(names) if c not in drop]
+    Xo, CUo, CIo, FB = evalset(**opt)
+    Xe = Xo if keep is None else Xo[:, keep]
+    scores = []
+    for i in range(n):
+        Xs, ys, Cs, off = [], [], [], 0
+        for t in tags:
+            X, CU, CI, y = load(t, **opt)
+            Xs.append(X if keep is None else X[:, keep])
+            ys.append(y); Cs.append(CU.astype(np.int64) + off); off += lib.N_USERS
+        X = np.vstack(Xs); y = np.concatenate(ys); C = np.concatenate(Cs)
+        o = np.argsort(C, kind="stable"); X, y, C = X[o], y[o], C[o]
+        g = np.diff(np.flatnonzero(np.r_[True, C[1:] != C[:-1], True]))
+        p = dict(PARAMS); p["random_state"] = lib.SEED + 1000 * i; p.update(kw)
+        m = lgb.LGBMRanker(**p).fit(X, y, group=g)
+        scores.append(lib.evaluate(features.top5(m.predict(Xe), CUo, CIo, FB), GT))
+        del X, y, C, m
+    a = np.array(scores)
+    print(f"  {name:<46} {a.mean():.5f} +- {a.std():.5f}   "
+          f"({', '.join(f'{v:.5f}' for v in a)})  [{time.time()-_t0:.0f}s]", flush=True)
+    return a.mean()
+
+
+def rank_norm(v, CU):
+    """Within-user reciprocal rank; lets scores from different fits be averaged."""
+    o = np.lexsort((-v, CU))
+    r = np.empty(len(v), np.float64)
+    _, i0 = np.unique(CU[o], return_index=True)
+    within = np.arange(len(CU)) - np.repeat(i0, np.diff(np.append(i0, len(CU))))
+    r[o] = 1.0 / (1.0 + within)
+    return r
+
+
+# --------------------------------------------------------------------------- experiments
+def exp_baseline():
+    print("\n[baseline] the recorded 3-window configuration")
+    run("3 windows, binary labels, defaults")
+
+
+def exp_trunc():
+    print("\n[trunc] lambdarank_truncation_level (LightGBM default 30, metric is MAP@5)")
+    for t in [5, 8, 10, 15, 20, 30, 50]:
+        run(f"truncation_level={t}", lambdarank_truncation_level=t)
+
+
+def exp_feats3():
+    print("\n[feats3] + 11 habit-shape features (streak, slot, watch completeness, channel)")
+    run("baseline (30 features, reference)")
+    run("+ FEATS3 (41 features)", opt=dict(feats3=True))
+
+
+def exp_chfix():
+    print("\n[chfix] channel affinity recomputed from history only (removes hold-out leak)")
+    run("honest ch_aff / ch_rank", opt=dict(chfix=True))
+    run("honest ch_aff + FEATS3", opt=dict(chfix=True, feats3=True))
+
+
+def exp_windows():
+    print("\n[windows] how many training windows")
+    run("1 window (s0413)", ["s0413_lAB"])
+    run("2 windows", BASE[:2])
+    run("4 windows", BASE + MORE[:1])
+    run("5 windows", BASE + MORE[:2])
+    run("6 windows", BASE + MORE[:3])
+    run("7 windows", BASE + MORE)
+
+
+def exp_capacity():
+    print("\n[capacity] trees, depth, learning rate")
+    for lr, ne in [(0.03, 400), (0.03, 1600), (0.05, 800), (0.02, 1600)]:
+        run(f"lr={lr} n_estimators={ne}", learning_rate=lr, n_estimators=ne)
+    for nl in [15, 63, 127]:
+        run(f"num_leaves={nl}", num_leaves=nl)
+    for mcs in [20, 200]:
+        run(f"min_child_samples={mcs}", min_child_samples=mcs)
+
+
+def seeds(n=7, tags=BASE, opt=None, label="baseline", **kw):
+    """Rank-averaged ensemble; also measures the seed-to-seed spread."""
+    opt = opt or {}
+    print(f"\n[seeds] {label}: {n} fits, rank-averaged")
+    Xo, CUo, CIo, FB = evalset(**opt)
+    acc = np.zeros(len(CUo)); singles = []
+    for i in range(n):
+        m = fit(tags, opt, random_state=lib.SEED + 1000 * i, **kw)
+        v = m.predict(Xo)
+        s1 = score_of(v, opt); singles.append(s1)
+        acc += rank_norm(v, CUo)
+        print(f"  seed {i}: single = {s1:.5f}   ensemble({i+1}) = {score_of(acc, opt):.5f}"
+              f"  [{time.time()-_t0:.0f}s]", flush=True)
+    a = np.array(singles)
+    print(f"  spread: min {a.min():.5f}  max {a.max():.5f}  mean {a.mean():.5f}  sd {a.std():.5f}")
+    return acc
+
+
+def exp_seeds():
+    seeds(7)
+
+
+def exp_seeds3():
+    seeds(7, opt=dict(feats3=True), label="41 features")
+
+
+def exp_windows3():
+    print("\n[windows3] number of training windows, on 41 features")
+    o = dict(feats3=True)
+    run("1 window (s0413)", ["s0413_lAB"], opt=o)
+    run("2 windows", BASE[:2], opt=o)
+    run("3 windows (reference)", BASE, opt=o)
+    run("4 windows", BASE + MORE[:1], opt=o)
+    run("5 windows", BASE + MORE[:2], opt=o)
+    run("6 windows", BASE + MORE[:3], opt=o)
+
+
+def exp_ablate():
+    """Drop each new feature in turn: which of the 11 actually carries the gain."""
+    import features3
+    print("\n[ablate] leave-one-out over FEATS3 (41 features = 30 base + 11 new)")
+    o = dict(feats3=True)
+    full, _ = run("all 41", opt=o)
+    Xo, CUo, CIo, FB = evalset(**o)
+    for j, nm in enumerate(features3.FEATS3):
+        keep = [c for c in range(41) if c != 30 + j]
+        Xs, ys, Cs, off = [], [], [], 0
+        for t in BASE:
+            X, CU, CI, y = load(t, **o)
+            Xs.append(X[:, keep]); ys.append(y); Cs.append(CU.astype(np.int64) + off)
+            off += lib.N_USERS
+        X = np.vstack(Xs); y = np.concatenate(ys); C = np.concatenate(Cs)
+        ordr = np.argsort(C, kind="stable"); X, y, C = X[ordr], y[ordr], C[ordr]
+        g = np.diff(np.flatnonzero(np.r_[True, C[1:] != C[:-1], True]))
+        m = lgb.LGBMRanker(**PARAMS).fit(X, y, group=g)
+        s = lib.evaluate(features.top5(m.predict(Xo[:, keep]), CUo, CIo, FB), GT)
+        print(f"  without {nm:<12} MAP@5 = {s:.5f}   delta = {s-full:+.5f}"
+              f"  [{time.time()-_t0:.0f}s]", flush=True)
+
+
+DEAD = ["streak", "frac_max", "own7", "last_week"]   # positive leave-one-out deltas
+
+
+def exp_feats4():
+    print("\n[feats4] the second added block, 3 seeds per configuration")
+    runm("30 base", opt=dict())
+    runm("41 = base + FEATS3", opt=dict(feats3=True))
+    runm("51 = base + FEATS3 + FEATS4", opt=dict(feats3=True, feats4=True))
+    runm("41 only FEATS4 (base + FEATS4)", opt=dict(feats4=True))
+
+
+def exp_prune():
+    print("\n[prune] drop the FEATS3 columns whose leave-one-out delta was positive")
+    print(f"        dead list: {DEAD}")
+    runm("41 full", opt=dict(feats3=True))
+    runm("41 minus dead", opt=dict(feats3=True), drop=DEAD)
+    runm("51 full", opt=dict(feats3=True, feats4=True))
+    runm("51 minus dead", opt=dict(feats3=True, feats4=True), drop=DEAD)
+
+
+EXP = {"baseline": exp_baseline, "trunc": exp_trunc, "feats3": exp_feats3,
+       "feats4": exp_feats4, "prune": exp_prune,
+       "chfix": exp_chfix, "windows": exp_windows, "capacity": exp_capacity,
+       "seeds": exp_seeds, "seeds3": exp_seeds3, "windows3": exp_windows3,
+       "ablate": exp_ablate}
+
+if __name__ == "__main__":
+    for name in sys.argv[1:]:
+        EXP[name]()
+    print(f"done [{time.time()-_t0:.0f}s]")
