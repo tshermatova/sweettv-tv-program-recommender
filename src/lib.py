@@ -1,10 +1,11 @@
 """Shared data layer: calibrated hold-out, candidate pools, MAP@5."""
-import numpy as np, pickle, csv
+import os, numpy as np, pickle, csv
 from collections import Counter, defaultdict
 
 ROOT="/Users/tshermatova/Downloads/week7-exam/"
 W=ROOT+"work/"; D=ROOT+"data/"; S=ROOT+"submissions/"
-FEAT_THR = 0.20   # "watched" for building history/features
+FEAT_THR = float(os.environ.get("FEAT_THR", 0.20))   # "watched" for history/features
+                  # overridable so the whole pipeline can be rebuilt at another threshold
 TGT_THR  = 1.00   # "watched" for the hold-out target (calibrated against Kaggle)
 SEED = 20261021
 

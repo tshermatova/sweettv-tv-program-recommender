@@ -458,8 +458,21 @@ def exp_feats5():
     run2("41 (shipped)", opt=dict(feats3=True), **big)
     run2("50 = 41 + FEATS5", opt=dict(feats3=True, feats5=True), **big)
 
+
+def exp_dart():
+    """DART: drops trees during boosting instead of only adding them.
+
+    A different boosting mechanism, not a hyperparameter -- the kind of amplitude that
+    can clear the noise. Needs no new caches, so it runs while other work builds.
+    """
+    print("\n[dart] DART vs GBDT, 50 features, 1600 trees, A and B")
+    o = dict(feats3=True, feats5=True)
+    big = dict(n_estimators=1600, learning_rate=0.015)
+    run2("GBDT (shipped)", opt=o, **big)
+    run2("DART, drop_rate 0.1", opt=o, boosting_type="dart", drop_rate=0.1, **big)
+
 EXP = {"baseline": exp_baseline, "trunc": exp_trunc, "feats3": exp_feats3,
-       "feats4": exp_feats4, "prune": exp_prune, "validate2": exp_validate2, "bigknobs": exp_bigknobs, "capacity2": exp_capacity2, "labels": exp_labels, "fuse": exp_fuse, "catboost": exp_catboost, "feats5": exp_feats5, "wweight": exp_wweight,
+       "feats4": exp_feats4, "prune": exp_prune, "validate2": exp_validate2, "bigknobs": exp_bigknobs, "capacity2": exp_capacity2, "labels": exp_labels, "fuse": exp_fuse, "catboost": exp_catboost, "feats5": exp_feats5, "dart": exp_dart, "wweight": exp_wweight,
        "chfix": exp_chfix, "windows": exp_windows, "capacity": exp_capacity,
        "seeds": exp_seeds, "seeds3": exp_seeds3, "windows3": exp_windows3,
        "ablate": exp_ablate}

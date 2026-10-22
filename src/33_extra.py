@@ -10,7 +10,7 @@ import lib, features, features2, features3, features4, features5
 
 cache2 = importlib.import_module("30_cache2")
 chv = importlib.import_module("32_chviews")
-CACHE = lib.W + "ds2/"
+CACHE = cache2.CACHE
 
 
 # evaluation sets are not in WIN: they carry no labels and their own builder

@@ -148,6 +148,31 @@ came from the future**.
 does not depend on the leak. Use the honest regime to SELECT between configurations;
 ship the ordinary one, which is legitimate at final-fit time.
 
+## FEAT_THR is already optimal — measured, not assumed
+
+`FEAT_THR` (how much of a programme a view must cover to enter the history at all) sits
+at the very top of the pipeline: it decides which (user, programme) pairs exist, what
+the collaborative block is fitted on, and what every habit feature is computed from.
+It was set to 0.20 on day one from the duration distribution and never tested.
+
+Tested properly: each threshold gets its own cache directory (`work/ds2_t10/`,
+`work/ds2_t35/`), selected by the `FEAT_THR` environment variable that `lib` now reads,
+so the 0.20 caches are never touched. 50 features, 1600 trees, both hold-outs, 3 seeds.
+
+| FEAT_THR | hold-out A | hold-out B |
+| --- | ---: | ---: |
+| 0.10 | 0.56032 | 0.52947 |
+| **0.20 (shipped)** | **0.56362** | **0.53026** |
+| 0.35 | 0.56104 | 0.52977 |
+
+An inverted U with the current value at the peak, on both instruments. Loosening to
+0.10 costs -0.0033/-0.0008, tightening to 0.35 costs -0.0026/-0.0005. Both failure
+modes make sense: at 0.10 channel-surfing enters the history as if it were viewing;
+at 0.35 genuine viewings by people who joined a programme late are thrown away.
+
+This is a result worth stating in the report: the day-one choice was not merely
+workable, it was optimal, and that is now measured rather than asserted.
+
 ## Directions tried on 2026-10-22 and closed (all on both hold-outs, 3 seeds)
 
 | direction | A | B | verdict |

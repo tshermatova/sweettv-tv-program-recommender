@@ -8,7 +8,8 @@ import sys, os, time, calendar, gc, numpy as np
 sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
 import lib, features, features2
 
-CACHE = lib.W + "ds2/"
+_SUF = "" if abs(lib.FEAT_THR - 0.20) < 1e-9 else f"_t{int(round(lib.FEAT_THR*100))}"
+CACHE = lib.W + f"ds2{_SUF}/"
 os.makedirs(CACHE, exist_ok=True)
 _t0 = time.time()
 
