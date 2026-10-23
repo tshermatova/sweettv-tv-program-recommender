@@ -18,8 +18,8 @@ MORE = ["s0406_lAB", "s0420_lAB", "s0323_lAB", "s0504_lAB"]
 _cache = {}
 
 
-def load(tag, feats3=False, feats4=False, feats5=False, feats6=False, chfix=False):
-    k = (tag, feats3, feats4, feats5, feats6, chfix)
+def load(tag, feats3=False, feats4=False, feats5=False, feats6=False, feats7=False, chfix=False):
+    k = (tag, feats3, feats4, feats5, feats6, feats7, chfix)
     if k in _cache:
         return _cache[k]
     X, CU, CI, y = ex33._base(tag)
@@ -34,12 +34,14 @@ def load(tag, feats3=False, feats4=False, feats5=False, feats6=False, chfix=Fals
         X = np.hstack([X, ex33.extras5(tag)]).astype(np.float32)
     if feats6:
         X = np.hstack([X, ex33.extras6(tag)]).astype(np.float32)
+    if feats7:
+        X = np.hstack([X, ex33.extras7(tag)]).astype(np.float32)
     _cache[k] = (X, CU, CI, y)
     return _cache[k]
 
 
-def colnames(feats3=False, feats4=False, feats5=False, feats6=False, **_):
-    import features3, features4, features5, features6
+def colnames(feats3=False, feats4=False, feats5=False, feats6=False, feats7=False, **_):
+    import features3, features4, features5, features6, features7
     n = list(features2.FEATS2)
     if feats3:
         n += features3.FEATS3
@@ -49,6 +51,8 @@ def colnames(feats3=False, feats4=False, feats5=False, feats6=False, **_):
         n += features5.FEATS5
     if feats6:
         n += features6.FEATS6
+    if feats7:
+        n += features7.FEATS7
     return n
 
 
@@ -505,8 +509,46 @@ def exp_feats6():
     run2("50 (shipped)", opt=dict(feats3=True, feats5=True), **big)
     run2("59 = 50 + FEATS6", opt=dict(feats3=True, feats5=True, feats6=True), **big)
 
+
+def exp_rankopts():
+    """Two knobs that change the lambdarank gradient itself, not the tree shape.
+
+    lambdarank_norm (default true) divides each group's gradient by its size; our groups
+    run from ~85 to ~500 candidates, so it is doing real work and may be the wrong call.
+    sigmoid sharpens or flattens the pairwise loss.
+    """
+    print("\n[rankopts] lambdarank gradient options, 50 features, 1600 trees, A and B")
+    o = dict(feats3=True, feats5=True)
+    big = dict(n_estimators=1600, learning_rate=0.015)
+    run2("default (norm=true, sigmoid=1.0)", opt=o, **big)
+    run2("lambdarank_norm=false", opt=o, lambdarank_norm=False, **big)
+    run2("sigmoid=2.0", opt=o, sigmoid=2.0, **big)
+    run2("sigmoid=0.5", opt=o, sigmoid=0.5, **big)
+
+
+def exp_feats7():
+    """Collaborative signals refitted on the last four weeks, beside the full-history ones."""
+    print("\n[feats7] recent-window collaborative block, A and B")
+    big = dict(n_estimators=1600, learning_rate=0.015)
+    run2("50 (shipped)", opt=dict(feats3=True, feats5=True), **big)
+    run2("54 = 50 + FEATS7", opt=dict(feats3=True, feats5=True, feats7=True), **big)
+
+
+def exp_combo():
+    """FEATS6 on top of 41, i.e. without FEATS5.
+
+    FEATS6 was measured on top of the 50-column set, which contains FEATS5 -- and on
+    the criterion that actually counts (private) FEATS5 was a regression: sub14 0.43398
+    against sub13's 0.43499. So the combination that matters has never been run.
+    """
+    print("\n[combo] content features with and without the FEATS5 block, A and B")
+    big = dict(n_estimators=1600, learning_rate=0.015)
+    run2("41 (sub13, best private so far)", opt=dict(feats3=True), **big)
+    run2("50 = 41 + FEATS6", opt=dict(feats3=True, feats6=True), **big)
+    run2("59 = 41 + FEATS5 + FEATS6", opt=dict(feats3=True, feats5=True, feats6=True), **big)
+
 EXP = {"baseline": exp_baseline, "trunc": exp_trunc, "feats3": exp_feats3,
-       "feats4": exp_feats4, "prune": exp_prune, "validate2": exp_validate2, "bigknobs": exp_bigknobs, "capacity2": exp_capacity2, "labels": exp_labels, "fuse": exp_fuse, "catboost": exp_catboost, "feats5": exp_feats5, "dart": exp_dart, "horizon": exp_horizon, "feats6": exp_feats6, "wweight": exp_wweight,
+       "feats4": exp_feats4, "prune": exp_prune, "validate2": exp_validate2, "bigknobs": exp_bigknobs, "capacity2": exp_capacity2, "labels": exp_labels, "fuse": exp_fuse, "catboost": exp_catboost, "feats5": exp_feats5, "dart": exp_dart, "horizon": exp_horizon, "feats6": exp_feats6, "rankopts": exp_rankopts, "feats7": exp_feats7, "combo": exp_combo, "wweight": exp_wweight,
        "chfix": exp_chfix, "windows": exp_windows, "capacity": exp_capacity,
        "seeds": exp_seeds, "seeds3": exp_seeds3, "windows3": exp_windows3,
        "ablate": exp_ablate}

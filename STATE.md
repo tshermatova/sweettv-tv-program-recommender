@@ -29,6 +29,33 @@ Under the private criterion **FEATS5 is a regression, not an improvement**, and 
 caution written when it landed ("do not call this an improvement") turns out to have
 been the right call. Everything from here is judged on private.
 
+## The hold-out stopped predicting the graded metric — STOP TUNING AGAINST IT
+
+Transfer from the two hold-outs to the PRIVATE score, in the order the changes were made:
+
+| change | hold-out A | hold-out B | private |
+| --- | ---: | ---: | ---: |
+| FEATS3 (habit shape) | +0.0146 | +0.0039 | **+0.0063** |
+| capacity 1600 / lr 0.015 | +0.0019 | +0.0024 | **+0.0008** |
+| FEATS4 (repeat timing) | +0.0027 | +0.0004 | 0.0000 |
+| FEATS5 (whole-log profiles) | +0.0052 | +0.0034 | **-0.0010** |
+| FEATS6 (content affinity) | +0.0029 | +0.0008 | **-0.0004** |
+
+Only the first two transferred. Three feature blocks in a row then failed, and the one
+with the largest and most consistent hold-out gain (FEATS5, +0.005 on A with both
+instruments agreeing) produced the worst private score of the four recent files.
+
+The likeliest cause is that **we over-fitted the hold-out with our own decisions**.
+Sixteen directions and several dozen configurations were each kept or dropped by
+whether they rose on A and B. With a seed sd of 0.0018 and real effects of 0.002-0.005,
+that selection process eventually starts picking what suits these two particular
+windows rather than what generalises. It is ordinary validation over-fitting, except
+the parameters being tuned are the experimenter's choices, not the model's.
+
+Practical consequence: a gain on A and B is no longer evidence. Either verify on Kaggle
+(one submission, private only) or do not claim it. Do not run another feature block and
+expect the hold-out to adjudicate it.
+
 ## The hold-out inflates gains, and the factor is not stable
 
 | change | hold-out A | hold-out B | Kaggle public | Kaggle private |
