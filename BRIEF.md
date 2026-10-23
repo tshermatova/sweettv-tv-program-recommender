@@ -77,8 +77,6 @@ supplying the factors separately was never the same as supplying the product.
 
 ## Data
 
-## Data
-
 | file | rows | role |
 | --- | ---: | --- |
 | `dataset11-30.csv` | 5 821 987 | view log, weeks 11-30 only |
