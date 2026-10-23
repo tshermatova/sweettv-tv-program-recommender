@@ -51,6 +51,67 @@ of the four. Nothing further should be tuned against the hold-out.
 
 A classmate reportedly reached private 0.437; we are 0.002 short and did not close it.
 
+## THE TARGET WAS WRONG FOR TWO DAYS — fixed 2026-10-24 00:50
+
+The competition's data page states how the answer file was built:
+
+    all entries with tv_show_id = 0 were removed
+    for each user and each TV show user screen time (time user watched the show divided
+    by total duration of the show) was calculated. Only TV shows with high screen time
+    (>= 0.8) were taken into account.
+    for each user high-screen time TV shows frequency was calculated
+    for each user strictly 5 most frequent TV shows were selected DESC - order matters!
+
+Two things were wrong in everything measured before this:
+
+1. The threshold is **0.8**, not the 1.00 in `lib.TGT_THR`.
+2. The relevant set is **exactly the five most frequent** qualifying programmes, not
+   every programme with a qualifying view. Our target had a median of 11 items, so the
+   hold-out gave credit for guessing any of eleven when only five can score. 84.7% of
+   the true answers were inside our set, along with about six extra per user.
+
+`lib.target_top5()` implements the real rule. The effect on the instrument is decisive:
+
+| | hold-out | Kaggle private | gap |
+| --- | ---: | ---: | ---: |
+| old target (all with frac>=1.0) | 0.5586 | 0.43499 | 0.12 |
+| **true target (top-5 by frequency)** | **0.4316** | 0.43499 | **0.003** |
+
+**The hold-out was never broken — the scale was.** With the target fixed it predicts the
+private score to within 0.003, so measurements are trustworthy again.
+
+Three labels against the true target, 3 seeds, 41 features, 1600 trees:
+
+| training label | MAP@5 (true target) |
+| --- | ---: |
+| every programme with frac >= 1.0 (what sub13 ships) | 0.43156 +- 0.00169 |
+| every programme with frac >= 0.8 | 0.43101 +- 0.00037 |
+| **top-5 by frequency, frac >= 0.8** | **0.43949 +- 0.00095** |
+
+The threshold was never the issue (1.0 → 0.8 is −0.0006). The **top-5 restriction** is
+worth +0.0079, eight times the seed spread.
+
+Under the true target the pool looks different too: recall 0.8181, ceiling 0.8181, and
+**10.79% of our candidates never air in weeks 31-42**, so their frequency is zero and
+they cannot be right — provable noise the ranker has been carrying all along.
+
+**Which past rejections still stand.** Anything rejected by a Kaggle submission stands,
+because the private score IS the true target: FEATS4, FEATS5, FEATS6, FEATS5+6, the 0.50
+label, the switching rule, both fusions, pool 160. Anything rejected by the hold-out
+alone was measured on the wrong scale and is now uncertain: truncation_level, num_leaves,
+rank_xendcg, lambdarank_norm, sigmoid, DART, FEAT_THR, the absolute-seconds rule, window
+weights, window count, negative downsampling, the binary classifier, the three alignment
+variants, "N complete views", FEATS7.
+
+One of those is not merely uncertain but **void**: group weight = 1/min(5, positives).
+Under the true target |R| = 5 for 90.9% of users, so that denominator is a constant and
+there is no heterogeneity to correct. It scored −0.0074 because it injected a weight
+modelling something that does not exist.
+
+Found by searching for solutions to THIS competition — [Marrrik/sweettv-recsys](https://github.com/Marrrik/sweettv-recsys)
+reports public 0.45497 / private 0.45015 and states the 0.8 rule in its README. Two days
+were spent studying H&M and OTTO write-ups and none searching the competition's own name.
+
 ## The hold-out stopped predicting the graded metric — STOP TUNING AGAINST IT
 
 Transfer from the two hold-outs to the PRIVATE score, in the order the changes were made:

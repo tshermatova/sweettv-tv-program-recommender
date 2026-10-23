@@ -10,7 +10,10 @@ FEAT_THR = float(os.environ.get("FEAT_THR", 0.20))   # "watched" for history/fea
 # only 3 minutes of a news bulletin, so the two rules disagree most on long programmes.
 ABS_SEC = float(os.environ.get("ABS_SEC", 0)) or None
                   # overridable so the whole pipeline can be rebuilt at another threshold
-TGT_THR  = 1.00   # "watched" for the hold-out target (calibrated against Kaggle)
+TGT_THR  = float(os.environ.get("TGT_THR", 0.80))   # the organisers' rule, from the
+                  # competition data page: an airing counts when screen time (overlap /
+                  # programme duration) is >= 0.8. We used 1.00 for two days, which made
+                  # every hold-out number optimistic and un-transferable.
 SEED = 20261021
 
 _A=pickle.load(open(W+"airings.pkl","rb"))
@@ -47,6 +50,34 @@ def target(thr=TGT_THR, lo=None, hi=None, min_n=1):
     if hi is not None: m &= PST< hi
     for u,s in zip(UI[m],SID[m]): H[int(u)][int(s)]+=1
     return {u:set(s for s,n in c.items() if n>=min_n) for u,c in H.items()}
+
+
+def target_top5(thr=None, lo=None, hi=None):
+    """The organisers' ground truth, exactly as the data page defines it.
+
+        all entries with tv_show_id = 0 were removed
+        for each user and each TV show user screen time (time user watched the show
+        divided by total duration of the show) was calculated. Only TV shows with high
+        screen time (>= 0.8) were taken into account.
+        for each user high-screen time TV shows frequency was calculated
+        for each user strictly 5 most frequent TV shows were selected DESC
+
+    So the relevant set is **exactly five** programmes per user, the five most frequent
+    qualifying airings, not every programme they watched. `target()` returns all of them
+    (median 11), which inflates MAP@5: it gives credit for guessing any of eleven when
+    only five can score. Ties are broken by programme id for determinism.
+    """
+    thr = TGT_THR if thr is None else thr
+    m = FRAC >= thr
+    if lo is not None: m &= PST >= lo
+    if hi is not None: m &= PST < hi
+    H = defaultdict(Counter)
+    for u, s in zip(UI[m], SID[m]): H[int(u)][int(s)] += 1
+    out = {}
+    for u, c in H.items():
+        ranked = sorted(c.items(), key=lambda kv: (-kv[1], kv[0]))[:5]
+        out[u] = [s for s, _ in ranked]
+    return out
 
 def popularity(H):
     p=Counter()

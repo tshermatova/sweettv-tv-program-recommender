@@ -135,6 +135,32 @@ def extras8(tag):
     return X
 
 
+def labels_top5(tag, thr=None):
+    """Label = the pair is in that user's five most frequent qualifying airings.
+
+    This is the organisers' own target, applied to the training window: screen time
+    >= 0.8 counts an airing, airings are counted per (user, show), and only the top five
+    by that count are positives. Exactly the thing the model is scored on, instead of
+    "watched anything at all", which is what it has been trained on until now.
+    """
+    thr = lib.TGT_THR if thr is None else thr
+    f = CACHE + f"{tag}_ytop5_{int(thr*100)}.npy"
+    if os.path.exists(f):
+        return np.load(f)
+    _, CU, CI, _ = _base(tag)
+    split, hi = geom(tag)
+    tgt = lib.target_top5(thr=thr, lo=split, hi=hi)
+    pos = set()
+    for u, items in tgt.items():
+        for it in items:
+            pos.add(u * lib.N_ITEMS + lib.IIDX_ALL[int(it)])
+    y = np.fromiter(((1 if (int(a) * lib.N_ITEMS + int(b)) in pos else 0)
+                     for a, b in zip(CU, CI)), np.int8, len(CU))
+    np.save(f, y)
+    print(f"   labels_top5 {tag:<14} pos={y.mean():.4f}", flush=True)
+    return y
+
+
 def ch_fix(tag):
     """Recompute FEATS2 columns 21 (ch_aff) and 22 (ch_rank) with history-only channel views."""
     f = CACHE + tag + "_chfix.npy"
