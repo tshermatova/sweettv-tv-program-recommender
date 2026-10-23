@@ -148,6 +148,23 @@ came from the future**.
 does not depend on the leak. Use the honest regime to SELECT between configurations;
 ship the ordinary one, which is legitimate at final-fit time.
 
+## DART: rejected, and expensive to learn it
+
+LightGBM `boosting_type="dart"`, drop_rate 0.1, 50 features, 1600 trees, both hold-outs,
+3 seeds: **A 0.55716** vs GBDT's 0.56362 (-0.0065), **B 0.52995** vs 0.53026 (-0.0003).
+Clearly worse on A, a tie on B. Rejected.
+
+It cost 20 168 s (5 h 36 m) against GBDT's 1 734 s for the identical work — **11.6x**.
+DART recomputes predictions against the dropped trees at every iteration, so the step
+cost grows with the number of trees already built; at 1 600 trees that is punitive. If
+it is ever retried, screen it at 200-400 trees first. (Estimates given during the run
+were 1.5-2x, then 3x, then 5x: all wrong. Measure it before budgeting for it.)
+
+The result also makes sense in context. DART guards against late trees that merely
+polish the errors of early ones. This model has the opposite problem: capacity rose
+monotonically to 1600 trees and 127 leaves overfit, i.e. it is under-fitted rather than
+over-fitted, so a remedy for over-fitting only removes signal.
+
 ## FEAT_THR is already optimal — measured, not assumed
 
 `FEAT_THR` (how much of a programme a view must cover to enter the history at all) sits

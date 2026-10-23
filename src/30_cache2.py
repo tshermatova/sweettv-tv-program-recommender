@@ -8,7 +8,9 @@ import sys, os, time, calendar, gc, numpy as np
 sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
 import lib, features, features2
 
+N_POP = int(os.environ.get("N_POP", 80))   # global-popularity candidates per user
 _SUF = "" if abs(lib.FEAT_THR - 0.20) < 1e-9 else f"_t{int(round(lib.FEAT_THR*100))}"
+_SUF += "" if N_POP == 80 else f"_p{N_POP}"
 CACHE = lib.W + f"ds2{_SUF}/"
 os.makedirs(CACHE, exist_ok=True)
 _t0 = time.time()
@@ -47,8 +49,9 @@ T_END = int(np.load(lib.W + "airings_raw.npy")[-1, 2]) + 1
 FINAL_WIN = ["f0608_l0713", "f0622_lT", "f0706_lT"]
 
 
-def build(tag, split, hi, label=True, users=None, n_pop=80):
+def build(tag, split, hi, label=True, users=None, n_pop=None):
     """Build one dataset. Returns X (30 cols), CU, CI, y (None when label=False)."""
+    n_pop = N_POP if n_pop is None else n_pop
     f = CACHE + tag + ".npz"
     if os.path.exists(f):
         z = np.load(f)
