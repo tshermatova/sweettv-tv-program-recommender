@@ -41,6 +41,12 @@ WIN = {
     "e0323_l0413": (ts(2020, 3, 23), ts(2020, 4, 13)),
     "e0330_l0413": (ts(2020, 3, 30), ts(2020, 4, 13)),
     "e0406_l0413": (ts(2020, 4, 6),  ts(2020, 4, 13)),
+    # LONG-HORIZON windows. Hold-out A's target is 10 weeks and the real test window is
+    # 12, but every training window above has a 3-5 week label horizon, so the ranker is
+    # taught to answer "watched within 5 weeks" and then asked about 12. These trade
+    # history for horizon.
+    "h0323_l8w":   (ts(2020, 3, 23), lib.B_AB),
+    "h0330_l7w":   (ts(2020, 3, 30), lib.B_AB),
 }
 
 B_EVAL2 = ts(2020, 4, 13)

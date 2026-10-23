@@ -6,7 +6,7 @@ Two separate things live here because both depend on a time cutoff:
 """
 import sys, os, importlib, numpy as np
 sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
-import lib, features, features2, features3, features4, features5
+import lib, features, features2, features3, features4, features5, features6
 
 cache2 = importlib.import_module("30_cache2")
 chv = importlib.import_module("32_chviews")
@@ -92,6 +92,19 @@ def extras5(tag):
     X = features5.extra(features.history_arrays(split), CU, CI, split, hi)
     np.save(f, X)
     print(f"   extras5 {tag:<14} {X.shape}", flush=True)
+    return X
+
+
+def extras6(tag):
+    """The 9 FEATS6 columns: category, genre, director, actor and year affinity."""
+    f = CACHE + tag + "_x6.npy"
+    if os.path.exists(f):
+        return np.load(f)
+    _, CU, CI, _ = _base(tag)
+    split, _ = geom(tag)
+    X = features6.extra(features.history_arrays(split), CU, CI)
+    np.save(f, X)
+    print(f"   extras6 {tag:<14} {X.shape}", flush=True)
     return X
 
 

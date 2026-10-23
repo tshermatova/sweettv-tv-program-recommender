@@ -18,8 +18,8 @@ MORE = ["s0406_lAB", "s0420_lAB", "s0323_lAB", "s0504_lAB"]
 _cache = {}
 
 
-def load(tag, feats3=False, feats4=False, feats5=False, chfix=False):
-    k = (tag, feats3, feats4, feats5, chfix)
+def load(tag, feats3=False, feats4=False, feats5=False, feats6=False, chfix=False):
+    k = (tag, feats3, feats4, feats5, feats6, chfix)
     if k in _cache:
         return _cache[k]
     X, CU, CI, y = ex33._base(tag)
@@ -32,12 +32,14 @@ def load(tag, feats3=False, feats4=False, feats5=False, chfix=False):
         X = np.hstack([X, ex33.extras4(tag)]).astype(np.float32)
     if feats5:
         X = np.hstack([X, ex33.extras5(tag)]).astype(np.float32)
+    if feats6:
+        X = np.hstack([X, ex33.extras6(tag)]).astype(np.float32)
     _cache[k] = (X, CU, CI, y)
     return _cache[k]
 
 
-def colnames(feats3=False, feats4=False, feats5=False, **_):
-    import features3, features4, features5
+def colnames(feats3=False, feats4=False, feats5=False, feats6=False, **_):
+    import features3, features4, features5, features6
     n = list(features2.FEATS2)
     if feats3:
         n += features3.FEATS3
@@ -45,6 +47,8 @@ def colnames(feats3=False, feats4=False, feats5=False, **_):
         n += features4.FEATS4
     if feats5:
         n += features5.FEATS5
+    if feats6:
+        n += features6.FEATS6
     return n
 
 
@@ -97,7 +101,7 @@ GT2 = lib.target(lo=cache2.B_EVAL2, hi=lib.B_AB)
 EVAL2 = cache2.EVAL2_WIN
 
 
-def run2(name, opt=None, n=3, drop=None, thr=None, wweight=None, **kw):
+def run2(name, opt=None, n=3, drop=None, thr=None, wweight=None, tags_a=None, **kw):
     """Score a configuration on BOTH hold-outs and report each.
 
     One window has fooled us four times: a change that wins on the 05-18..07-27 target
@@ -134,7 +138,7 @@ def run2(name, opt=None, n=3, drop=None, thr=None, wweight=None, **kw):
             del X, y, C, m
         return np.array(out)
 
-    a = one(BASE, "outer", GT)
+    a = one(tags_a or BASE, "outer", GT)
     b = one(EVAL2, "outer2", GT2)
     print(f"  {name:<40} A {a.mean():.5f}+-{a.std():.5f}   "
           f"B {b.mean():.5f}+-{b.std():.5f}  [{time.time()-_t0:.0f}s]", flush=True)
@@ -471,8 +475,38 @@ def exp_dart():
     run2("GBDT (shipped)", opt=o, **big)
     run2("DART, drop_rate 0.1", opt=o, boosting_type="dart", drop_rate=0.1, **big)
 
+
+def exp_horizon():
+    """Does matching the label horizon to the target window help?
+
+    Training windows have 3-5 week label horizons; hold-out A's target is 10 weeks and
+    the Kaggle test window is 12. Prediction stated before running: adding a long-horizon
+    window should help on A and NOT on B, whose target is only 5 weeks. If both move,
+    the explanation is wrong even if the number is nice.
+    """
+    print("\n[horizon] long-horizon training windows, 50 features, 1600 trees")
+    o = dict(feats3=True, feats5=True)
+    big = dict(n_estimators=1600, learning_rate=0.015)
+    run2("3 windows (shipped, 3-5 week horizons)", opt=o, **big)
+    run2("+ h0323_l8w (8-week horizon)", opt=o, tags_a=BASE + ["h0323_l8w"], **big)
+    run2("+ h0323 + h0330 (8 and 7 weeks)", opt=o,
+         tags_a=BASE + ["h0323_l8w", "h0330_l7w"], **big)
+
+
+def exp_feats6():
+    """Content affinity broken out of the single `cbf` column.
+
+    88% of the catalogue is films and the metadata is 97-100% complete, so genre,
+    director, actor and year affinity are the classic signal for this catalogue --
+    and the ranker currently sees none of them separately.
+    """
+    print("\n[feats6] content affinity, 50 -> 59 features, A and B")
+    big = dict(n_estimators=1600, learning_rate=0.015)
+    run2("50 (shipped)", opt=dict(feats3=True, feats5=True), **big)
+    run2("59 = 50 + FEATS6", opt=dict(feats3=True, feats5=True, feats6=True), **big)
+
 EXP = {"baseline": exp_baseline, "trunc": exp_trunc, "feats3": exp_feats3,
-       "feats4": exp_feats4, "prune": exp_prune, "validate2": exp_validate2, "bigknobs": exp_bigknobs, "capacity2": exp_capacity2, "labels": exp_labels, "fuse": exp_fuse, "catboost": exp_catboost, "feats5": exp_feats5, "dart": exp_dart, "wweight": exp_wweight,
+       "feats4": exp_feats4, "prune": exp_prune, "validate2": exp_validate2, "bigknobs": exp_bigknobs, "capacity2": exp_capacity2, "labels": exp_labels, "fuse": exp_fuse, "catboost": exp_catboost, "feats5": exp_feats5, "dart": exp_dart, "horizon": exp_horizon, "feats6": exp_feats6, "wweight": exp_wweight,
        "chfix": exp_chfix, "windows": exp_windows, "capacity": exp_capacity,
        "seeds": exp_seeds, "seeds3": exp_seeds3, "windows3": exp_windows3,
        "ablate": exp_ablate}

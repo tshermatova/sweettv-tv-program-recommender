@@ -6,20 +6,28 @@ Spec lives in the conversation as `exam_quiz_GSB.md`; consultation transcript as
 
 ## Where things stand
 
-Best Kaggle result by the graded metric — `sub14_feats5_1600.csv`, **ref 57532130**,
-submitted 2026-10-22 16:48, named in the description. **public 0.45281 / private
-0.43398**. Most recent, best public, properly named: the PDF screenshot must show
-THIS row. 15 submissions, cap 99/day.
+**THE GRADED CRITERION CHANGED on 2026-10-23.** Asked directly on Telegram whether
+the cohort is ranked by public or private score, the instructor answered:
+**"I will check the highest private score."** That supersedes both the written spec
+(which says "returned public score" four times) and the consultation's
+most-recent-submission rule. Highest private, over all submissions.
 
-**Read that number honestly.** sub13 (41 features) scored public 0.45080 / private
-0.43499. So sub14 is +0.0020 on the public half and -0.0010 on the private half.
-Section 10 ranks the cohort by the RETURNED PUBLIC SCORE, so sub14 is the right file
-to submit, but averaging the halves puts the true effect of FEATS5 near +0.0005. Do
-not write "the third feature block improved the model" in the report; write what the
-two halves actually say.
+So the designated submission is **`sub13_feats3_1600.csv`, ref 57522216**:
+public 0.45080 / **private 0.43499** -- the highest private of the 15. The PDF
+screenshot must show THIS row, and sub13 should be ticked under "Selected" on the
+Submissions tab, because with 0 of 2 selected Kaggle auto-picks by PUBLIC score and
+would take sub14, whose private is the worst of the four recent files.
 
-Above first place on the frozen leaderboard (Magic City: public 0.44297, private
-0.42912, verified from the board).
+| submission | public | private |
+| --- | ---: | ---: |
+| **sub13** 41 feats, 1600 trees | 0.45080 | **0.43499** |
+| sub12 51 feats | 0.44472 | 0.43420 |
+| sub11 41 feats, 800 trees | 0.44994 | 0.43415 |
+| sub14 50 feats (FEATS5) | 0.45281 | 0.43398 |
+
+Under the private criterion **FEATS5 is a regression, not an improvement**, and the
+caution written when it landed ("do not call this an improvement") turns out to have
+been the right call. Everything from here is judged on private.
 
 ## The hold-out inflates gains, and the factor is not stable
 
