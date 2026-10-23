@@ -6,7 +6,7 @@ Two separate things live here because both depend on a time cutoff:
 """
 import sys, os, importlib, numpy as np
 sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
-import lib, features, features2, features3, features4, features5, features6, features7, features8
+import lib, features, features2, features3, features4, features5, features6, features7, features8, features9
 
 cache2 = importlib.import_module("30_cache2")
 chv = importlib.import_module("32_chviews")
@@ -159,6 +159,19 @@ def labels_top5(tag, thr=None):
     np.save(f, y)
     print(f"   labels_top5 {tag:<14} pos={y.mean():.4f}", flush=True)
     return y
+
+
+def extras9(tag):
+    """The 5 FEATS9 columns: an explicit estimate of expected viewing frequency."""
+    f = CACHE + tag + "_x9.npy"
+    if os.path.exists(f):
+        return np.load(f)
+    _, CU, CI, _ = _base(tag)
+    split, hi = geom(tag)
+    X = features9.extra(features.history_arrays(split), CU, CI, split, hi)
+    np.save(f, X)
+    print(f"   extras9 {tag:<14} {X.shape}", flush=True)
+    return X
 
 
 def ch_fix(tag):

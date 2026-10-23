@@ -33,21 +33,24 @@ def label(s):
 
 
 # ---- the two users ---------------------------------------------------------------
-GT = lab.GT
+# The organisers' real target: each user's five most frequent airings at screen time
+# >= 0.8, not every programme they watched. The earlier version of this table marked
+# HIT/miss against the wider set, so its hit counts were too generous.
+GT = {u: set(v) for u, v in lib.target_top5(thr=0.80, lo=lib.B_AB, hi=lib.B_TEST).items()}
 hm = features.history_arrays(lib.B_AB)
 ev = Counter(int(u) for u in lib.UI[hm])
 dis = {}
 for u, s in zip(lib.UI[hm], lib.SIDX[hm]):
     dis.setdefault(int(u), set()).add(int(s))
 
-elig = [(ev.get(u, 0), u) for u in lib.TEST_UI if GT.get(u) and ev.get(u, 0) > 0]
+elig = [(ev.get(u, 0), u) for u in lib.TEST_UI if len(GT.get(u, ())) == 5 and ev.get(u, 0) > 0]
 elig.sort()
 LIGHT = elig[0][1]
 HEAVY = elig[-1][1]
 med = int(np.median([n for n, _ in elig]))
 
 say("=" * 94)
-say("SECTION 7 — two users, every method's Top-5")
+say("SECTION 7 — two users, every method's Top-5 (scored against the organisers' top-5 target)")
 say("=" * 94)
 say()
 say("Why these two. There is no cold-start case to show: all 1 260 test users appear in")

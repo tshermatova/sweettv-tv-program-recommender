@@ -18,8 +18,8 @@ MORE = ["s0406_lAB", "s0420_lAB", "s0323_lAB", "s0504_lAB"]
 _cache = {}
 
 
-def load(tag, feats3=False, feats4=False, feats5=False, feats6=False, feats7=False, feats8=False, chfix=False):
-    k = (tag, feats3, feats4, feats5, feats6, feats7, feats8, chfix)
+def load(tag, feats3=False, feats4=False, feats5=False, feats6=False, feats7=False, feats8=False, feats9=False, chfix=False):
+    k = (tag, feats3, feats4, feats5, feats6, feats7, feats8, feats9, chfix)
     if k in _cache:
         return _cache[k]
     X, CU, CI, y = ex33._base(tag)
@@ -38,6 +38,8 @@ def load(tag, feats3=False, feats4=False, feats5=False, feats6=False, feats7=Fal
         X = np.hstack([X, ex33.extras7(tag)]).astype(np.float32)
     if feats8:
         X = np.hstack([X, ex33.extras8(tag)]).astype(np.float32)
+    if feats9:
+        X = np.hstack([X, ex33.extras9(tag)]).astype(np.float32)
     _cache[k] = (X, CU, CI, y)
     return _cache[k]
 

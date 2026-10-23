@@ -15,6 +15,68 @@ against the course slides' worked examples (relevant {A,B,C}: `A,B,D,C,E` → 0.
 score** over all submissions — not the public score the written spec names, and not the
 most recent submission.
 
+## CORRECTION, 2026-10-24: the target was wrong for the first two days
+
+The competition data page defines the answer file:
+
+    all entries with tv_show_id = 0 were removed
+    for each user and each TV show user screen time (time user watched the show divided
+    by total duration of the show) was calculated. Only TV shows with high screen time
+    (>= 0.8) were taken into account.
+    for each user high-screen time TV shows frequency was calculated
+    for each user strictly 5 most frequent TV shows were selected DESC - order matters!
+    Private/public test data is split BY USERS (50/50) - not by time.
+
+Everything measured before 2026-10-24 00:50 used `frac >= 1.00` and treated **every**
+qualifying programme as relevant (median 11 per user). The truth is **exactly five**, the
+five most frequent, at threshold **0.8**. 84.7% of the true answers were inside our set,
+together with roughly six extra per user that cannot score.
+
+| | hold-out | Kaggle private | gap |
+| --- | ---: | ---: | ---: |
+| old target | 0.5586 | 0.43499 | 0.12 |
+| **true target (`lib.target_top5`)** | **0.4316** | 0.43499 | **0.003** |
+
+The hold-out was never broken; the scale was. It now predicts private to 0.003.
+
+Training labels aligned to the same rule, 3 seeds, 41 features, 1600 trees:
+
+| label | MAP@5 (true target) |
+| --- | ---: |
+| every programme, frac >= 1.0 (what sub13 ships) | 0.43156 +- 0.00169 |
+| every programme, frac >= 0.8 | 0.43101 +- 0.00037 |
+| **top-5 by frequency, frac >= 0.8** | **0.43949 +- 0.00095** |
+
+The threshold was never the issue. The **top-5 restriction** is worth +0.0079, eight times
+the seed spread.
+
+**The pool, re-measured under the true target:** recall 0.8181, ceiling 0.8181, 1.9% of
+users have no correct answer in the pool, and **10.79% of candidates never air in weeks
+31-42**, so their frequency is necessarily zero. Note that coverage now costs
+1 − 0.8181 = **0.182**, against 0.104 under the old target: candidate generation matters
+nearly twice as much as it appeared to.
+
+**Which earlier rejections survive.** Those confirmed by a Kaggle submission do, because
+the private score is the true target: FEATS4, FEATS5, FEATS6, FEATS5+6, the 0.50 label,
+the switching rule, both rank fusions, pool 160. Those rejected on the hold-out alone were
+measured on the wrong scale and are uncertain again: truncation_level, num_leaves,
+rank_xendcg, lambdarank_norm, sigmoid, DART, FEAT_THR, the absolute-seconds rule, window
+weights, window count, negative downsampling, the binary classifier, the alignment
+variants, "N complete views", FEATS7. One is void rather than uncertain: group weight =
+1/min(5, positives), since |R| = 5 for 90.9% of users leaves nothing to normalise.
+
+**How it was found:** searching for solutions to THIS competition, which had not been done
+in two days of studying H&M and OTTO write-ups.
+[Marrrik/sweettv-recsys](https://github.com/Marrrik/sweettv-recsys) reports public 0.45497
+/ private 0.45015 and states the 0.8 rule. Its approach also differs from ours in two ways
+worth copying: candidates are restricted to programmes **airing in the target window**, and
+it carries an explicit **habit x schedule** source — which is an estimate of the expected
+number of qualifying views, i.e. of the target quantity itself. `src/features9.py`
+implements that as five columns; a tree splits on axes and does not multiply them, so
+supplying the factors separately was never the same as supplying the product.
+
+## Data
+
 ## Data
 
 | file | rows | role |
