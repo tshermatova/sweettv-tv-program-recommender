@@ -5,6 +5,10 @@ from collections import Counter, defaultdict
 ROOT="/Users/tshermatova/Downloads/week7-exam/"
 W=ROOT+"work/"; D=ROOT+"data/"; S=ROOT+"submissions/"
 FEAT_THR = float(os.environ.get("FEAT_THR", 0.20))   # "watched" for history/features
+# ABS_SEC: when set, "watched" means at least this many seconds of overlap, regardless of
+# programme length, instead of a fraction of it. 20% of a two-hour film is 24 minutes but
+# only 3 minutes of a news bulletin, so the two rules disagree most on long programmes.
+ABS_SEC = float(os.environ.get("ABS_SEC", 0)) or None
                   # overridable so the whole pipeline can be rebuilt at another threshold
 TGT_THR  = 1.00   # "watched" for the hold-out target (calibrated against Kaggle)
 SEED = 20261021
@@ -21,6 +25,9 @@ TEST_UI=[UIDX[u] for u in TEST_USERS]
 _M=np.load(W+"matches.npy")
 UI,SID,OV,PDUR,PST=_M[:,0],_M[:,1],_M[:,2],_M[:,3],_M[:,4]
 FRAC=OV/np.maximum(PDUR,1)
+# WATCHED is what every history mask tests; swapping the rule swaps it here, once.
+WATCHED = (OV >= ABS_SEC).astype(np.float32) if ABS_SEC else FRAC
+WATCH_THR = 0.5 if ABS_SEC else FEAT_THR     # the boolean form needs a threshold of 0.5
 
 def history(thr=FEAT_THR, lo=None, hi=None, weight="count"):
     """user_idx -> Counter(show -> weight) over events with prog_start in [lo,hi)."""

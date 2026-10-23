@@ -35,8 +35,9 @@ def user_hour_profile(mask):
     n=P.sum(1,keepdims=True); n[n==0]=1
     return P/n
 
-def history_arrays(hi, thr=lib.FEAT_THR, lo=None):
-    m=lib.FRAC>=thr
+def history_arrays(hi, thr=None, lo=None):
+    thr = lib.WATCH_THR if thr is None else thr
+    m=lib.WATCHED>=thr
     m &= lib.PST<hi
     if lo is not None: m &= lib.PST>=lo
     return m

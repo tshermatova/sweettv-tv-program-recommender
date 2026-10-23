@@ -148,6 +148,36 @@ came from the future**.
 does not depend on the leak. Use the honest regime to SELECT between configurations;
 ship the ordinary one, which is legitimate at final-fit time.
 
+## The join's normalisation rule is also optimal as chosen
+
+"Watched" has always meant overlap >= 20% of the programme's own duration. The stated
+alternative in the quiz was an absolute-seconds cut. `lib.WATCHED` now switches between
+them from the `ABS_SEC` environment variable, with its own cache directory, and no
+re-run of the join is needed because `matches.npy` already carries overlap and duration.
+
+| rule | history events | hold-out A | hold-out B |
+| --- | ---: | ---: | ---: |
+| **FRAC >= 0.20 (shipped)** | 888 573 | **0.56362** | **0.53026** |
+| OV >= 300 s | 1 426 752 | 0.55453 | 0.52884 |
+| OV >= 600 s | 1 061 656 | 0.54818 | 0.51834 |
+
+Relative normalisation wins on both instruments, by -0.009 and -0.015 respectively.
+The reason is the one the quiz hints at: five minutes of a fifteen-minute bulletin is a
+third of it, five minutes of a two-hour film is the opening titles. An absolute cut
+calls them the same and fills the history with long-programme views that never happened
+in any meaningful sense.
+
+Note against over-confident reasoning: 300 s beats 600 s, the opposite of what I
+predicted. The 300 s rule admits 60% more history, and that volume partly offsets the
+worse rule shape — two effects pulling against each other, and I had only counted one.
+
+## Candidate pool: no effect
+
+N_POP 80 -> 160 (pool roughly doubled, e.g. e0406 447 380 -> 802 318 rows):
+A 0.56279 vs 0.56362, B 0.53170 vs 0.53026. Down on one instrument, up on the other.
+Oracle inside the pool was already 0.85963 against a model at 0.564, so the pool was
+never the binding constraint; widening it only adds candidates to rank wrongly.
+
 ## DART: rejected, and expensive to learn it
 
 LightGBM `boosting_type="dart"`, drop_rate 0.1, 50 features, 1600 trees, both hold-outs,
