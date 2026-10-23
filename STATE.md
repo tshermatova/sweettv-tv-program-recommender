@@ -6,6 +6,23 @@ Spec lives in the conversation as `exam_quiz_GSB.md`; consultation transcript as
 
 ## Where things stand
 
+Designated submission: **`sub25_top5_s0.csv`, ref 57573516, private 0.44205**
+(public 0.45440). Same model as sub13 — 41 features, 3 windows, 1600 trees, lr 0.015 —
+with the training label replaced by the organisers' own rule: each user's five most
+frequent airings at screen time >= 0.8. Built by
+`src/36_final_feats3.py --big --seeds 5 --top5 --per-seed`.
+
+private 0.43499 -> **0.44205, +0.00706** — the largest single gain since FEATS3, and the
+first one the corrected hold-out predicted correctly: it said +0.0079 and Kaggle gave
++0.00706.
+
+The five seeds scored 0.44017 / 0.44033 / 0.44095 / 0.44105 / 0.44205 on private and
+their rank-average 0.44175, so submitting seeds individually was worth +0.0003 over the
+average, not the +0.0025 the spread implied. Worth the six slots, but the estimate was
+three times too high.
+
+Remaining gap to the classmate's 0.45015: **0.0081**, down from 0.0152.
+
 **THE GRADED CRITERION CHANGED on 2026-10-23.** Asked directly on Telegram whether
 the cohort is ranked by public or private score, the instructor answered:
 **"I will check the highest private score."** That supersedes both the written spec
