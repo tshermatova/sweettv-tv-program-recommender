@@ -6,7 +6,7 @@ Two separate things live here because both depend on a time cutoff:
 """
 import sys, os, importlib, numpy as np
 sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
-import lib, features, features2, features3, features4, features5, features6, features7
+import lib, features, features2, features3, features4, features5, features6, features7, features8
 
 cache2 = importlib.import_module("30_cache2")
 chv = importlib.import_module("32_chviews")
@@ -60,21 +60,22 @@ def extras4(tag):
     return X
 
 
-def labels(tag, thr):
+def labels(tag, thr, min_n=1):
     """Recompute y at a different 'watched' threshold.
 
     The shipped label is FRAC >= 1.0 (the user's interval covered the whole programme),
     which leaves only ~3.5% positives. The feature matrix does not depend on the label,
     so a different threshold costs a set lookup, not a cache rebuild.
     """
-    f = CACHE + f"{tag}_y{int(thr*100)}.npy"
+    f = CACHE + f"{tag}_y{int(thr*100)}" + (f"n{min_n}" if min_n > 1 else "") + ".npy"
     if os.path.exists(f):
         return np.load(f)
     _, CU, CI, _ = _base(tag)
     split, hi = geom(tag)
     m = (lib.FRAC >= thr) & (lib.PST >= split) & (lib.PST < hi)
-    pos = set(np.unique(lib.UI[m].astype(np.int64) * lib.N_ITEMS
-                        + lib.SIDX[m].astype(np.int64)).tolist())
+    key = lib.UI[m].astype(np.int64) * lib.N_ITEMS + lib.SIDX[m].astype(np.int64)
+    uk, cnt = np.unique(key, return_counts=True)
+    pos = set(uk[cnt >= min_n].tolist())
     y = np.fromiter((1 if (int(a) * lib.N_ITEMS + int(b)) in pos else 0
                      for a, b in zip(CU, CI)), np.int8, len(CU))
     np.save(f, y)
@@ -118,6 +119,19 @@ def extras7(tag):
     X = features7.extra(split, CU, CI)
     np.save(f, X)
     print(f"   extras7 {tag:<14} {X.shape}", flush=True)
+    return X
+
+
+def extras8(tag):
+    """The 5 FEATS8 columns: Word2Vec proximity between the candidate and the history."""
+    f = CACHE + tag + "_x8.npy"
+    if os.path.exists(f):
+        return np.load(f)
+    _, CU, CI, _ = _base(tag)
+    split, _ = geom(tag)
+    X = features8.extra(split, CU, CI)
+    np.save(f, X)
+    print(f"   extras8 {tag:<14} {X.shape}", flush=True)
     return X
 
 

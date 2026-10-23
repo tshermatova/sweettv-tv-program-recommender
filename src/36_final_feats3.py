@@ -23,7 +23,24 @@ OPT = dict(feats3=True, feats4="--feats4" in sys.argv, feats5="--feats5" in sys.
            feats6="--feats6" in sys.argv, feats7="--feats7" in sys.argv)
 
 print(f"building final-regime datasets [{time.time()-_t0:.0f}s]", flush=True)
-X, y, g = lab.stack(cache2.FINAL_WIN, **OPT)
+THR = float(sys.argv[sys.argv.index("--thr") + 1]) if "--thr" in sys.argv else None
+if THR is None:
+    X, y, g = lab.stack(cache2.FINAL_WIN, **OPT)
+else:
+    # Retrain against a looser definition of "watched". The hold-out cannot judge this:
+    # its own target uses frac >= 1.0, so it scores any looser labelling as worse by
+    # construction. Only Kaggle's private score can say whether the target was right.
+    import importlib as _il
+    _ex = _il.import_module("33_extra")
+    Xs, ys, Cs, off = [], [], [], 0
+    for t in cache2.FINAL_WIN:
+        Xw, CU, CI, _ = lab.load(t, **OPT)
+        Xs.append(Xw); ys.append(_ex.labels(t, THR))
+        Cs.append(CU.astype(np.int64) + off); off += lib.N_USERS
+    X = np.vstack(Xs); y = np.concatenate(ys); C = np.concatenate(Cs)
+    o = np.argsort(C, kind="stable"); X, y, C = X[o], y[o], C[o]
+    g = np.diff(np.flatnonzero(np.r_[True, C[1:] != C[:-1], True]))
+    print(f"label threshold {THR}: positives {y.mean():.4f}", flush=True)
 print(f"fit set: {X.shape[0]:,} rows / {len(g):,} groups / {X.shape[1]} features "
       f"pos={y.mean():.4f} [{time.time()-_t0:.0f}s]", flush=True)
 

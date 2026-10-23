@@ -18,8 +18,8 @@ MORE = ["s0406_lAB", "s0420_lAB", "s0323_lAB", "s0504_lAB"]
 _cache = {}
 
 
-def load(tag, feats3=False, feats4=False, feats5=False, feats6=False, feats7=False, chfix=False):
-    k = (tag, feats3, feats4, feats5, feats6, feats7, chfix)
+def load(tag, feats3=False, feats4=False, feats5=False, feats6=False, feats7=False, feats8=False, chfix=False):
+    k = (tag, feats3, feats4, feats5, feats6, feats7, feats8, chfix)
     if k in _cache:
         return _cache[k]
     X, CU, CI, y = ex33._base(tag)
@@ -36,12 +36,14 @@ def load(tag, feats3=False, feats4=False, feats5=False, feats6=False, feats7=Fal
         X = np.hstack([X, ex33.extras6(tag)]).astype(np.float32)
     if feats7:
         X = np.hstack([X, ex33.extras7(tag)]).astype(np.float32)
+    if feats8:
+        X = np.hstack([X, ex33.extras8(tag)]).astype(np.float32)
     _cache[k] = (X, CU, CI, y)
     return _cache[k]
 
 
-def colnames(feats3=False, feats4=False, feats5=False, feats6=False, feats7=False, **_):
-    import features3, features4, features5, features6, features7
+def colnames(feats3=False, feats4=False, feats5=False, feats6=False, feats7=False, feats8=False, **_):
+    import features3, features4, features5, features6, features7, features8
     n = list(features2.FEATS2)
     if feats3:
         n += features3.FEATS3
@@ -53,6 +55,8 @@ def colnames(feats3=False, feats4=False, feats5=False, feats6=False, feats7=Fals
         n += features6.FEATS6
     if feats7:
         n += features7.FEATS7
+    if feats8:
+        n += features8.FEATS8
     return n
 
 
@@ -105,7 +109,7 @@ GT2 = lib.target(lo=cache2.B_EVAL2, hi=lib.B_AB)
 EVAL2 = cache2.EVAL2_WIN
 
 
-def run2(name, opt=None, n=3, drop=None, thr=None, wweight=None, tags_a=None, **kw):
+def run2(name, opt=None, n=3, drop=None, thr=None, min_n=1, wweight=None, tags_a=None, **kw):
     """Score a configuration on BOTH hold-outs and report each.
 
     One window has fooled us four times: a change that wins on the 05-18..07-27 target
@@ -128,7 +132,7 @@ def run2(name, opt=None, n=3, drop=None, thr=None, wweight=None, tags_a=None, **
             for wi, t in enumerate(tags):
                 X, CU, CI, y = load(t, **opt)
                 if thr is not None:
-                    y = ex33.labels(t, thr)
+                    y = ex33.labels(t, thr, min_n)
                 Xs.append(X if keep is None else X[:, keep])
                 ys.append(y); Cs.append(CU.astype(np.int64) + off); off += lib.N_USERS
                 Ws.append(np.full(len(CU), wweight[wi] if wweight else 1.0, np.float32))
@@ -547,8 +551,188 @@ def exp_combo():
     run2("50 = 41 + FEATS6", opt=dict(feats3=True, feats6=True), **big)
     run2("59 = 41 + FEATS5 + FEATS6", opt=dict(feats3=True, feats5=True, feats6=True), **big)
 
+
+def _stack_sub(tags, opt, n_neg=None, rng=None):
+    """Stack windows, optionally keeping all positives and only n_neg negatives per user."""
+    Xs, ys, Cs, off = [], [], [], 0
+    for t in tags:
+        X, CU, CI, y = load(t, **opt)
+        if n_neg is not None:
+            keep = np.zeros(len(y), bool)
+            order = np.argsort(CU, kind="stable")
+            bounds = np.flatnonzero(np.r_[True, CU[order][1:] != CU[order][:-1], True])
+            for a, b in zip(bounds[:-1], bounds[1:]):
+                rows = order[a:b]
+                pos = rows[y[rows] == 1]
+                if len(pos) == 0:
+                    continue                      # a group with no positive gives lambdarank
+                neg = rows[y[rows] == 0]          # no gradient at all; drop it outright
+                if len(neg) > n_neg:
+                    neg = rng.choice(neg, n_neg, replace=False)
+                keep[pos] = True; keep[neg] = True
+            X, CU, y = X[keep], CU[keep], y[keep]
+        Xs.append(X); ys.append(y); Cs.append(CU.astype(np.int64) + off); off += lib.N_USERS
+    X = np.vstack(Xs); y = np.concatenate(ys); C = np.concatenate(Cs)
+    o = np.argsort(C, kind="stable"); X, y, C = X[o], y[o], C[o]
+    g = np.diff(np.flatnonzero(np.r_[True, C[1:] != C[:-1], True]))
+    return X, y, g
+
+
+def run3(name, opt=None, n=3, n_neg=None, classifier=False, **kw):
+    """Like run2 but can downsample negatives and can fit a binary classifier."""
+    opt = opt or {}
+    out = {}
+    for tags, ev, gt, which in [(BASE, "outer", GT, "A"), (EVAL2, "outer2", GT2, "B")]:
+        Xo, CUo, CIo, _ = load(ev, **opt)
+        z = np.load(cache2.CACHE + ev + ".npz")
+        FB = [int(lib.ITEMS_ALL[k]) for k in np.argsort(-z["pop_u"])[:5]]
+        sc = []
+        for i in range(n):
+            rng = np.random.default_rng(lib.SEED + 1000 * i)
+            X, y, g = _stack_sub(tags, opt, n_neg, rng)
+            p = dict(PARAMS); p["random_state"] = lib.SEED + 1000 * i; p.update(kw)
+            if classifier:
+                for k_ in ("objective", "metric", "eval_at"):
+                    p.pop(k_, None)
+                m = lgb.LGBMClassifier(objective="binary", **p).fit(X, y)
+                v = m.predict_proba(Xo)[:, 1]
+            else:
+                m = lgb.LGBMRanker(**p).fit(X, y, group=g)
+                v = m.predict(Xo)
+            sc.append(lib.evaluate(features.top5(v, CUo, CIo, FB), gt))
+            del X, y, m
+        out[which] = np.array(sc)
+    a, b = out["A"], out["B"]
+    print(f"  {name:<40} A {a.mean():.5f}+-{a.std():.5f}   "
+          f"B {b.mean():.5f}+-{b.std():.5f}  [{time.time()-_t0:.0f}s]", flush=True)
+    return a.mean(), b.mean()
+
+
+def exp_negsample():
+    """Negative downsampling, as the OTTO write-up does (1:40, capped, no-positive groups dropped).
+
+    Our pool is ~138 with 3.5% positives, so roughly 1:28 already. Note that a group with
+    no positive produces no lambdarank gradient at all, so dropping those should change
+    speed and nothing else -- that is a prediction, and the 'all negatives' row tests it.
+    """
+    print("\n[negsample] keeping all positives, sampling negatives, 41 features")
+    o = dict(feats3=True)
+    big = dict(n_estimators=1600, learning_rate=0.015)
+    run3("all negatives (shipped)", opt=o, **big)
+    run3("40 negatives per user", opt=o, n_neg=40, **big)
+    run3("20 negatives per user", opt=o, n_neg=20, **big)
+
+
+def exp_classifier():
+    """Binary classifier instead of lambdarank -- what the H&M winner used.
+
+    Our earlier pointwise test was on the 17-feature set, before every improvement since.
+    """
+    print("\n[classifier] LGBMClassifier vs LGBMRanker, 41 features")
+    o = dict(feats3=True)
+    big = dict(n_estimators=1600, learning_rate=0.015)
+    run3("lambdarank (shipped)", opt=o, **big)
+    run3("binary classifier", opt=o, classifier=True, **big)
+
+
+def _user_events(split):
+    """History event count per user, for the window ending at `split`."""
+    hm = features.history_arrays(split)
+    return np.bincount(lib.UI[hm].astype(np.int64), minlength=lib.N_USERS)
+
+
+def run4(name, opt=None, n=3, uw=None, drop_below=None, map_norm=False, **kw):
+    """Weight or filter training groups.
+
+    uw         -> (threshold, weight): groups whose user has >= threshold history events
+                  get `weight`, the rest get 1.0. Test users are 1.6x more active than
+                  the rest (median 196 vs 125 events), so the ranker currently learns
+                  mostly from users unlike the ones it is scored on.
+    drop_below -> drop training users with fewer than this many events outright.
+    map_norm   -> weight each group by 1/min(5, |positives|), which is exactly how MAP@5
+                  normalises a user: one relevant item found is worth as much as five.
+    """
+    opt = opt or {}
+    out = {}
+    for tags, ev_tag, gt, which in [(BASE, "outer", GT, "A"), (EVAL2, "outer2", GT2, "B")]:
+        Xo, CUo, CIo, _ = load(ev_tag, **opt)
+        z = np.load(cache2.CACHE + ev_tag + ".npz")
+        FB = [int(lib.ITEMS_ALL[k]) for k in np.argsort(-z["pop_u"])[:5]]
+        sc = []
+        for i in range(n):
+            Xs, ys, Cs, Ws, off = [], [], [], [], 0
+            for t in tags:
+                X, CU, CI, y = load(t, **opt)
+                cnt = _user_events(cache2.WIN[t][0])
+                w = np.ones(len(CU), np.float32)
+                if uw is not None:
+                    thr, mult = uw
+                    w[cnt[CU.astype(np.int64)] >= thr] = mult
+                if map_norm:
+                    npos = np.bincount(CU.astype(np.int64), weights=y.astype(np.float64),
+                                       minlength=lib.N_USERS)
+                    w *= (1.0 / np.maximum(np.minimum(npos[CU.astype(np.int64)], 5), 1)).astype(np.float32)
+                keep = slice(None)
+                if drop_below is not None:
+                    keep = cnt[CU.astype(np.int64)] >= drop_below
+                    X, CU, y, w = X[keep], CU[keep], y[keep], w[keep]
+                Xs.append(X); ys.append(y); Ws.append(w)
+                Cs.append(CU.astype(np.int64) + off); off += lib.N_USERS
+            X = np.vstack(Xs); y = np.concatenate(ys); C = np.concatenate(Cs); W = np.concatenate(Ws)
+            o = np.argsort(C, kind="stable"); X, y, C, W = X[o], y[o], C[o], W[o]
+            g = np.diff(np.flatnonzero(np.r_[True, C[1:] != C[:-1], True]))
+            p = dict(PARAMS); p["random_state"] = lib.SEED + 1000 * i; p.update(kw)
+            m = lgb.LGBMRanker(**p).fit(X, y, group=g, sample_weight=W)
+            sc.append(lib.evaluate(features.top5(m.predict(Xo), CUo, CIo, FB), gt))
+            del X, y, C, W, m
+        out[which] = np.array(sc)
+    a, b = out["A"], out["B"]
+    print(f"  {name:<44} A {a.mean():.5f}+-{a.std():.5f}   "
+          f"B {b.mean():.5f}+-{b.std():.5f}  [{time.time()-_t0:.0f}s]", flush=True)
+    return a.mean(), b.mean()
+
+
+def exp_align():
+    """Align training with how the model is actually scored. Three independent corrections."""
+    print("\n[align] matching the training population and weighting to the metric")
+    o = dict(feats3=True)
+    big = dict(n_estimators=1600, learning_rate=0.015)
+    run4("reference", opt=o, **big)
+    run4("x2 weight for users with >=150 events", opt=o, uw=(150, 2.0), **big)
+    run4("x3 weight for users with >=150 events", opt=o, uw=(150, 3.0), **big)
+    run4("drop users with <100 events", opt=o, drop_below=100, **big)
+    run4("group weight = 1/min(5, positives)", opt=o, map_norm=True, **big)
+
+
+def exp_minviews():
+    """Strictness in a second dimension: how MANY complete views count as a positive.
+
+    frac cannot exceed 1.0 — the overlap is capped by the programme's own duration — so
+    the earlier threshold sweep ended at a hard boundary, not an arbitrary one. But
+    requiring the programme to have been watched in full more than once is a different
+    kind of strictness, and about 27% of positive pairs qualify.
+
+    The hold-out is trustworthy here: it predicted the 0.50 threshold's failure
+    (-0.016 on A) and Kaggle confirmed it (-0.011 private). Label-level questions are
+    the structural kind it still answers correctly.
+    """
+    print("\n[minviews] positives must be watched in full at least N times, 41 features")
+    o = dict(feats3=True)
+    big = dict(n_estimators=1600, learning_rate=0.015)
+    run2("N=1 (shipped)", opt=o, thr=1.0, min_n=1, **big)
+    run2("N=2", opt=o, thr=1.0, min_n=2, **big)
+    run2("N=3", opt=o, thr=1.0, min_n=3, **big)
+
+
+def exp_feats8():
+    """Word2Vec proximity features: 41 -> 46 columns."""
+    print("\n[feats8] Word2Vec proximity, A and B")
+    big = dict(n_estimators=1600, learning_rate=0.015)
+    run2("41 (sub13)", opt=dict(feats3=True), **big)
+    run2("46 = 41 + FEATS8", opt=dict(feats3=True, feats8=True), **big)
+
 EXP = {"baseline": exp_baseline, "trunc": exp_trunc, "feats3": exp_feats3,
-       "feats4": exp_feats4, "prune": exp_prune, "validate2": exp_validate2, "bigknobs": exp_bigknobs, "capacity2": exp_capacity2, "labels": exp_labels, "fuse": exp_fuse, "catboost": exp_catboost, "feats5": exp_feats5, "dart": exp_dart, "horizon": exp_horizon, "feats6": exp_feats6, "rankopts": exp_rankopts, "feats7": exp_feats7, "combo": exp_combo, "wweight": exp_wweight,
+       "feats4": exp_feats4, "prune": exp_prune, "validate2": exp_validate2, "bigknobs": exp_bigknobs, "capacity2": exp_capacity2, "labels": exp_labels, "fuse": exp_fuse, "catboost": exp_catboost, "feats5": exp_feats5, "dart": exp_dart, "horizon": exp_horizon, "feats6": exp_feats6, "rankopts": exp_rankopts, "feats7": exp_feats7, "combo": exp_combo, "negsample": exp_negsample, "align": exp_align, "minviews": exp_minviews, "feats8": exp_feats8, "classifier": exp_classifier, "wweight": exp_wweight,
        "chfix": exp_chfix, "windows": exp_windows, "capacity": exp_capacity,
        "seeds": exp_seeds, "seeds3": exp_seeds3, "windows3": exp_windows3,
        "ablate": exp_ablate}
