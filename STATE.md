@@ -29,6 +29,28 @@ Under the private criterion **FEATS5 is a regression, not an improvement**, and 
 caution written when it landed ("do not call this an improvement") turns out to have
 been the right call. Everything from here is judged on private.
 
+## MODEL SEARCH CLOSED, 2026-10-23 16:45
+
+Designated submission: **`sub13_feats3_1600.csv`, ref 57522216, private 0.43499**
+(public 0.45080). 41 features, 3 training windows, 1600 trees / lr 0.015, 5-seed rank
+average. Built by `src/36_final_feats3.py --big --seeds 5`.
+
+Four attempts to beat it, all with better hold-out numbers, all worse on private:
+
+| submission | features | hold-out A | private |
+| --- | ---: | ---: | ---: |
+| **sub13** | 41 | 0.55856 | **0.43499** |
+| sub16 | 59 (FEATS5+FEATS6) | **0.56449** | 0.43470 |
+| sub15 | 50 (FEATS6) | 0.56146 | 0.43460 |
+| sub14 | 50 (FEATS5) | 0.56364 | 0.43398 |
+
+The ordering on the hold-out is the exact reverse of the ordering on private. The
+best-validating configuration — 59 features, +0.0054 on both instruments, seed sd
+0.0004, the most stable result of the whole search — is 0.0003 worse than the simplest
+of the four. Nothing further should be tuned against the hold-out.
+
+A classmate reportedly reached private 0.437; we are 0.002 short and did not close it.
+
 ## The hold-out stopped predicting the graded metric — STOP TUNING AGAINST IT
 
 Transfer from the two hold-outs to the PRIVATE score, in the order the changes were made:
