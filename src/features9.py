@@ -42,7 +42,11 @@ def extra(hist_mask, CU, CI, air_lo, air_hi, ch_share=None):
 
     # P(user is on channel c) — share of their seconds, from the full log
     if ch_share is None:
-        ch_share = lib.CH_VIEWS
+        # lib.CH_VIEWS sums channel seconds over the WHOLE log (weeks 11-30). On the
+        # hold-out, history stops at B_AB but that profile still contains the target
+        # window, so using it here leaks. Cut it at the history boundary instead.
+        import importlib
+        ch_share = importlib.import_module("32_chviews").ch_share(air_lo)[0]
     UC = np.zeros((lib.N_USERS, N_CH), np.float32)
     for uu, v in ch_share.items():
         tot = sum(v.values()) or 1

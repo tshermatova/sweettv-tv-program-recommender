@@ -6,7 +6,7 @@ Two separate things live here because both depend on a time cutoff:
 """
 import sys, os, importlib, numpy as np
 sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
-import lib, features, features2, features3, features4, features5, features6, features7, features8, features9
+import lib, features, features2, features3, features4, features5, features6, features7, features8, features9, features10, features11
 
 cache2 = importlib.import_module("30_cache2")
 chv = importlib.import_module("32_chviews")
@@ -171,6 +171,71 @@ def extras9(tag):
     X = features9.extra(features.history_arrays(split), CU, CI, split, hi)
     np.save(f, X)
     print(f"   extras9 {tag:<14} {X.shape}", flush=True)
+    return X
+
+
+def labels_graded(tag, mode="count", cap=5, thr=None):
+    """Graded labels that encode the target's own ordering, not just membership.
+
+    The answer is each user's five most frequent qualifying airings, sorted DESC by that
+    frequency — so the ordering inside the five is part of the ground truth. A binary
+    "is in the top five" label throws that away.
+
+      count -> y = number of qualifying airings for the pair, capped at `cap`
+      rank  -> y = 5 for the user's most frequent, 4 for the next, ... 1 for the fifth,
+               0 for everything else: the target's own ordering, verbatim
+    """
+    thr = lib.TGT_THR if thr is None else thr
+    f = CACHE + f"{tag}_yg{mode}{cap}_{int(thr*100)}.npy"
+    if os.path.exists(f):
+        return np.load(f)
+    _, CU, CI, _ = _base(tag)
+    split, hi = geom(tag)
+    m = (lib.FRAC >= thr) & (lib.PST >= split) & (lib.PST < hi)
+    key = lib.UI[m].astype(np.int64) * lib.N_ITEMS + lib.SIDX[m].astype(np.int64)
+    uk, cnt = np.unique(key, return_counts=True)
+    if mode == "count":
+        val = dict(zip(uk.tolist(), np.minimum(cnt, cap).tolist()))
+    else:
+        from collections import defaultdict
+        per = defaultdict(list)
+        for k, c in zip(uk.tolist(), cnt.tolist()):
+            per[k // lib.N_ITEMS].append((c, k))
+        val = {}
+        for u, lst in per.items():
+            lst.sort(key=lambda x: (-x[0], x[1]))
+            for pos, (_, k) in enumerate(lst[:5]):
+                val[k] = 5 - pos
+    y = np.fromiter((val.get(int(a) * lib.N_ITEMS + int(b), 0)
+                     for a, b in zip(CU, CI)), np.int8, len(CU))
+    np.save(f, y)
+    print(f"   labels_graded {tag:<14} {mode}: mean={y.mean():.4f} max={y.max()}", flush=True)
+    return y
+
+
+def extras10(tag):
+    """The 6 FEATS10 columns: refinements of the expected-frequency estimate."""
+    f = CACHE + tag + "_x10.npy"
+    if os.path.exists(f):
+        return np.load(f)
+    _, CU, CI, _ = _base(tag)
+    split, hi = geom(tag)
+    X = features10.extra(features.history_arrays(split), CU, CI, split, hi)
+    np.save(f, X)
+    print(f"   extras10 {tag:<14} {X.shape}", flush=True)
+    return X
+
+
+def extras11(tag):
+    """The 6 FEATS11 columns: the programme's broadcast history before the window."""
+    f = CACHE + tag + "_x11.npy"
+    if os.path.exists(f):
+        return np.load(f)
+    _, CU, CI, _ = _base(tag)
+    split, hi = geom(tag)
+    X = features11.extra(CU, CI, split, hi)
+    np.save(f, X)
+    print(f"   extras11 {tag:<14} {X.shape}", flush=True)
     return X
 
 

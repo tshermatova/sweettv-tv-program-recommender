@@ -68,6 +68,61 @@ of the four. Nothing further should be tuned against the hold-out.
 
 A classmate reportedly reached private 0.437; we are 0.002 short and did not close it.
 
+## RULES THAT COST SOMETHING TO LEARN — read before writing any new feature
+
+**1. Any feature touching channel shares must take a window-cut profile.**
+`lib.CH_VIEWS` sums channel seconds over the WHOLE log. Pass
+`32_chviews.ch_share(split)[0]`, never the default. This leak was found and documented
+on day one, correctly avoided in `features5` — and then walked straight into in
+`features9`, where the default argument pulled the whole log. It produced a hold-out
+gain of +0.0272 and a Kaggle private loss of **-0.011**: the model learned to lean on
+knowledge of the future, and at test time that column is honest and weaker, so it ranks
+*below* the baseline rather than merely level with it. The same mistake twice, the
+second time after writing the warning myself.
+
+`features2.build2` still computes ch_aff from the raw CH_VIEWS, so the shipped model has
+a milder version of the same train/serve mismatch; `src/53_chfix_true.py` measures
+whether fixing it helps.
+
+**2. Measure on the hold-out before building a submission.** A build is 45 minutes, a
+hold-out measurement is 10-20. Twice tonight a build was started for a configuration
+whose alternative had not been measured, and twice it was the wrong order.
+
+**3. Gate dependent experiments on their premise.** The six refinements of expected
+frequency (`features10`) were held until the honest base was measured; the base came out
+negative, so an hour of compute was never spent. Nothing earlier in the project was
+gated this way and several hours went to experiments whose premise was already dead.
+
+**4. A number that reproduces across processes is trustworthy; one that does not needs
+explaining before use.** The 41-feature reference printed 0.43949 +- 0.00095 in four
+separate runs. Early in the project a 0.00289 discrepancy was chased for an hour before
+turning out to be numpy 2.3.5 vs 1.24.3 across interpreters.
+
+## WHAT THE NIGHT OF 2026-10-24 ESTABLISHED
+
+After the target was corrected, exactly one change worked and six did not:
+
+| change | hold-out (true target) | Kaggle private |
+| --- | ---: | ---: |
+| **top-5 frequency label** | **+0.0079** | **+0.00706** |
+| expected frequency, leaky | +0.0272 | **-0.011** |
+| expected frequency, honest | -0.0024 | not submitted |
+| graded label, rank 5..1 | -0.0021 | not submitted |
+| graded label, airing count | -0.0017 | not submitted |
+| broadcast history (FEATS11) | -0.0013 | not submitted |
+| candidates restricted to airing items | -0.0014 | not submitted |
+
+**The 41-feature set looks saturated for this candidate pool.** Six independent feature
+blocks added nothing, which is what saturation looks like: the information each new column
+carries is already present in another. Note that `is_premiere` came out identically zero —
+premieres never enter the pool, because candidates are the user's own history plus the
+popular list, and both require having aired.
+
+**The one structural lever left is the pool itself.** Under the true target, 17.1% of
+correct answers (1 018 of 5 946) are not candidates at all, and 175 of those are
+premieres that the current generation cannot reach by construction. No feature fixes a
+missing candidate.
+
 ## THE TARGET WAS WRONG FOR TWO DAYS — fixed 2026-10-24 00:50
 
 The competition's data page states how the answer file was built:
