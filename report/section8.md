@@ -113,7 +113,7 @@ and both lost.
 
 **User experience.** The honest description is that this system **predicts habit**.
 Recommending only programmes the user has already watched, weighted by how often they
-air, scores 0.37324 against the full model's 0.43949 — 85% of the result from repeats
+air, scores 0.37471 against the full model's 0.43949 — 85% of the result from repeats
 alone. A viewer shown these five would mostly see the news they already watch. Whether
 that makes a good product is not answerable from this data; it is what the metric
 rewards, and a service adopting it should adopt it knowing that.
@@ -126,7 +126,7 @@ but never recommended. Every method compared here is choosing within a tenth of 
 schedule, by construction and not by a modelling choice that could be tuned away.
 
 **Ranking, not retrieval, is the binding constraint — measured.** Perfect ordering of the
-candidates we already have would score 0.8181; the model scores 0.4395. Raising the
+candidates we already have would score 0.8181; the model scores 0.43949. Raising the
 ceiling to 0.8325 by adding every programme on each user's three main channels changed
 the score by −0.0004. The model cannot exploit candidates it already fails to order.
 

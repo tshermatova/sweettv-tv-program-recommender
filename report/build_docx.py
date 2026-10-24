@@ -313,7 +313,11 @@ for block in src.split("\n\n"):
     b = re.sub(r"\*\*(.+?)\*\*", r"\1", b)
     b = re.sub(r"(?<!\w)\*(.+?)\*(?!\w)", r"\1", b)
     b = b.replace("`", "")
-    P(b, bold_lead=(lead + " ") if lead else None)
+    # no space after the bold lead when the sentence continues with punctuation,
+    # otherwise Word shows "... in the sparse tail , and not by"
+    b = b.lstrip()          # the remainder after a bold lead already carries its space
+    sep = "" if b[:1] in ",.;:" else " "
+    P(b, bold_lead=(lead + sep) if lead else None)
 
 # ---- 6 ---------------------------------------------------------------------------
 H("6. AI Usage Disclosure", 1)
