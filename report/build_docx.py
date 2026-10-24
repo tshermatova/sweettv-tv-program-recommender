@@ -3,6 +3,7 @@
 Every number written here is copied from a run in this repository or from a returned
 Kaggle score. The sources are named in the text so the grader can check them.
 """
+import re
 import sys
 from docx import Document
 from docx.shared import Pt, Inches, RGBColor
@@ -143,10 +144,12 @@ H("3. Method", 1)
 P("A view is matched to a programme when both share a channel and their intervals overlap. "
   "frac = overlap / programme duration, which cannot exceed 1.0 because the overlap is "
   "capped by the programme itself. An event enters a user's history when frac ≥ 0.20. That "
-  "threshold was swept and is optimal: 0.10 and 0.35 are both worse on both hold-outs, and "
-  "an absolute-seconds rule (≥ 300 s, ≥ 600 s) loses by 0.009 and 0.015 — five minutes of a "
-  "fifteen-minute bulletin is a third of it, five minutes of a two-hour film is the titles. "
-  "src/01_join.py, src/lib.py.", bold_lead="Join rule and watched threshold. ")
+  "threshold was swept and 0.10 and 0.35 were both worse, as was an absolute-seconds "
+  "rule by 0.009 and 0.015 \u2014 five minutes of a fifteen-minute bulletin is a third of it, "
+  "five minutes of a two-hour film is the titles. Those sweeps were run before the target "
+  "definition was corrected (Section 5), so they are indicative rather than conclusive; "
+  "the threshold was left at 0.20 and not re-swept afterwards. src/01_join.py, src/lib.py.",
+  bold_lead="Join rule and watched threshold. ")
 P("89.2% of schedule rows carry tv_show_id = 0. They never become items and never appear "
   "in any candidate list. They are not discarded entirely: the seconds spent on them still "
   "count towards a user's channel affinity, which is computed from the raw log rather than "
@@ -158,11 +161,11 @@ P("History is cut at 2020-05-18, the week 20/21 boundary; the target is the ten 
   "grid — which programme airs on which channel at which time — and nothing else. No "
   "viewing behaviour from the test window exists in the supplied data, so there is nothing "
   "there to leak.", bold_lead="Validation split. ")
-P("Each user's own watched programmes plus the 80 globally most popular, about 139 "
+P("Each user's own watched programmes plus the 80 globally most popular, about 138 "
   "candidates per user, 174 092 rows for the 1 260 test users. The pool is identical for "
   "every method compared in this report. Recommending an already-watched programme is "
   "allowed and is in fact the strongest single signal: repeats alone, weighted by how often "
-  "the programme airs in the target window, score 0.37471 of the final 0.43949.",
+  "the programme airs in the target window, score 0.37471 against the full model's 0.43949.",
   bold_lead="Candidate pool and repeats. ")
 P("There is none. All 1 260 test users appear in the view log; only two have zero matched "
   "events, eight have fewer than ten and the median is 330. For those two the model falls "
@@ -197,14 +200,14 @@ table("Table 1. Data, join, target and candidate pool.",
        ["Schedule rows with tv_show_id ≠ 0 (weeks 11–20)", "115 613 of 1 074 235 (10.8%)"],
        ["Join events at frac ≥ 0.20; at frac ≥ 0.80", "3 847 696; 570 588"],
        ["Test users; with a target in the hold-out window", "1 260; 1 236 (median |R| = 5)"],
-       ["Candidates per user; rows scored", "139; 174 092"],
+       ["Candidates per user; rows scored", "138; 174 092"],
        ["Candidate recall of true answers; MAP@5 ceiling", "0.8181; 0.8181"],
        ["Correct answers not in the pool; of those, premieres", "17.1%; 175"],
        ["Seed-to-seed sd of an identical configuration", "0.00178"]],
       widths=[4.2, 2.6])
 
 table("Table 2. Methods on the hold-out, scored against the organisers' target. "
-      "Each method ranks the same 139 candidates per user.",
+      "Each method ranks the same 138 candidates per user.",
       [["Method", "MAP@5"],
        ["Content-based filtering", "0.24107"],
        ["Popularity (required baseline)", "0.27387"],
@@ -230,7 +233,7 @@ table("Table 4a. Heavy user 13571199046623737884: 3 733 events over 445 programm
       "pool of 450, five relevant programmes.",
       [["Method", "Top-5 (id — title [category])", "Hits"],
        ["Popularity", "2400480 ТСН. Неделя [Инфо]; 240081 Факты. День [Инфо] ✓; "
-        "2400467 Вікна-Новини [Инфо]; 2400508 Сегодня. Итоги [Инфо]; "
+        "2400467 Викна-Новости [Инфо]; 2400508 Сегодня. Итоги [Инфо]; "
         "6500479 Мир наизнанку [Познав.]", "1/5"],
        ["Association rules", "identical list, identical order", "1/5"],
        ["Personalised PageRank", "identical list, identical order", "1/5"],
@@ -294,6 +297,8 @@ for block in src.split("\n\n"):
         rows = [[c.strip() for c in ln.strip().strip("|").split("|")]
                 for ln in b.split("\n") if ln.strip().startswith("|")]
         rows = [r_ for r_ in rows if not all(set(c) <= set("-: ") for c in r_)]
+        rows = [[re.sub(r"\*\*(.+?)\*\*", r"\1", c).replace("`", "") for c in r_]
+                for r_ in rows]
         if rows:
             table("Table 6. The two users, hits out of five.", rows, widths=[3.0, 1.9, 1.9])
         continue
@@ -303,7 +308,12 @@ for block in src.split("\n\n"):
         end = b.find("**", 2)
         if end > 0:
             lead, b = b[2:end], b[end + 2:]
-    P(b.replace("**", ""), bold_lead=(lead + " ") if lead else None)
+    # strip the remaining markdown: bold, italics and code spans otherwise render as
+    # literal asterisks and backticks in Word
+    b = re.sub(r"\*\*(.+?)\*\*", r"\1", b)
+    b = re.sub(r"(?<!\w)\*(.+?)\*(?!\w)", r"\1", b)
+    b = b.replace("`", "")
+    P(b, bold_lead=(lead + " ") if lead else None)
 
 # ---- 6 ---------------------------------------------------------------------------
 H("6. AI Usage Disclosure", 1)
