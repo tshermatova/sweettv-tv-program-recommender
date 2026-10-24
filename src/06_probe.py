@@ -1,5 +1,8 @@
 import numpy as np, pickle, csv, os, sys
 from collections import Counter, defaultdict
+import os
+# Repository root, derived from this file's own location so the code runs from any checkout.
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/"
 W=ROOT + "work/"; D=ROOT + "data/"
 S=ROOT + "submissions/"
 A=pickle.load(open(W+"airings.pkl","rb")); airT=A["airings"]["T"]; airT_set=set(airT)

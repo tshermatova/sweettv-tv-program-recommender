@@ -1,5 +1,8 @@
 import csv, sys, time
 from collections import Counter
+import os
+# Repository root, derived from this file's own location so the code runs from any checkout.
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/"
 D = ROOT + "data/"
 t0 = time.time()
 

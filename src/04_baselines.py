@@ -1,5 +1,8 @@
 import numpy as np, pickle, csv
 from collections import Counter, defaultdict
+import os
+# Repository root, derived from this file's own location so the code runs from any checkout.
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/"
 W=ROOT + "work/"; D=ROOT + "data/"
 A=pickle.load(open(W+"airings.pkl","rb")); AIR=A["airings"]; B_AB=A["B_AB"]
 M=np.load(W+"matches.npy")

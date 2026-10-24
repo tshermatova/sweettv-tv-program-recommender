@@ -1,5 +1,8 @@
 """Can tv_show_id be recovered for unlabelled airtime via tv_show_title?"""
 import csv, collections
+import os
+# Repository root, derived from this file's own location so the code runs from any checkout.
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/"
 D=ROOT + "data/"
 title2ids=collections.defaultdict(collections.Counter)
 n_lab=n_unlab=0; unlab_titles=collections.Counter(); blank=0

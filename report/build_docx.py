@@ -323,10 +323,11 @@ for block in src.split("\n\n"):
 # ---- 6 ---------------------------------------------------------------------------
 H("6. AI Usage Disclosure", 1)
 P("The implementation, the experiments and the drafting of this report were carried out "
-  "with Claude Code (Claude Opus 5) over three working sessions, in the manner the course "
-  "permits. The complete session export is submitted alongside this PDF. Every number "
-  "reported here is produced by a script in the repository; none is quoted from the "
-  "assistant's recollection. Two errors found during the work are documented rather than "
+  "with Claude Code (Claude Opus 5) over two working sessions between 21 and 24 October, "
+  "in the manner the course permits. Both session exports are submitted alongside this "
+  "PDF, unmodified, 4 710 records in total. Every number reported here is produced by a "
+  "script in the repository; none is quoted from the assistant's recollection. Two errors "
+  "found during the work are documented rather than "
   "removed, because they bound how much the earlier measurements can be trusted: the "
   "validation target was defined incorrectly for the first two days, and one feature block "
   "leaked future channel activity into the hold-out. Both are described in Section 5 and "

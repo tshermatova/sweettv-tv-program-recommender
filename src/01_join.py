@@ -1,5 +1,7 @@
 """Interval join: view log x broadcast schedule -> user-programme interactions."""
 import csv, time, calendar, numpy as np, os
+# Repository root, derived from this file's own location so the code runs from any checkout.
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/"
 D = ROOT + "data/"
 OUT = ROOT + "work/"
 os.makedirs(OUT, exist_ok=True)

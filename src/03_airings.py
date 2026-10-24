@@ -1,6 +1,9 @@
 """Airing counts per (show, window) and per (show, channel, window) from the schedule."""
 import csv, pickle, calendar, numpy as np
 from collections import Counter, defaultdict
+import os
+# Repository root, derived from this file's own location so the code runs from any checkout.
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/"
 D=ROOT + "data/"; W=ROOT + "work/"
 def ts(s): return calendar.timegm((int(s[6:10]),int(s[3:5]),int(s[0:2]),int(s[11:13]),int(s[14:16]),int(s[17:19]),0,0,0))
 # window boundaries (epoch, UTC)

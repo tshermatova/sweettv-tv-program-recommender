@@ -46,16 +46,31 @@ All paths are derived from each file's own location, so the repository runs from
 checkout.
 
 ```
-pip install lightgbm numpy scipy scikit-learn
+pip install -r requirements.txt
 kaggle competitions download -c sweettv-tv-program-recommender -p data/ && unzip -d data/ data/*.zip
-python3 src/01_join.py          # interval join -> work/matches.npy
-python3 src/03b_airings_raw.py  # airing grid
-python3 src/30_cache2.py        # feature caches
+export OMP_NUM_THREADS=2 VECLIB_MAXIMUM_THREADS=2
+python3 src/01_join.py          # interval join -> work/matches.npy, show_meta, ch_views, users
+python3 src/03_airings.py       # airing counts per window -> work/airings.pkl
+python3 src/03b_airings_raw.py  # airing grid -> work/airings_raw.npy
+python3 src/30_cache2.py f0608_l0713 f0622_lT f0706_lT final   # the four datasets the
+                                # final model needs; plain `30_cache2.py` builds all 17,
+                                # which only the hold-out experiments use
 python3 src/36_final_feats3.py --big --seeds 5 --top5 --per-seed --name sub25_top5
 ```
 
+`src/03_airings.py` must run before anything that imports `src/lib.py`: the module reads
+`work/airings.pkl` at import time, so without it every later script fails on the import
+line rather than on a missing file.
+
 Always set `OMP_NUM_THREADS=2 VECLIB_MAXIMUM_THREADS=2`; without it BLAS oversubscribes
 on the small ALS solves and the machine slows by about a factor of ten.
+
+Measured on the machine this was written on (M1, 8 GB): the join 232 s, the two airing
+steps about 30 s together, the final build about 20 minutes for five seeds. The first
+three steps are deterministic — rerun from an empty `work/` they reproduce
+`matches.npy`, `airings.pkl`, `airings_raw.npy`, `show_meta.pkl`, `ch_views.pkl` and
+`users.txt` byte for byte. `work/` is 490 MB and entirely rebuildable from `data/`, so
+it is not in the repository.
 
 ## Where to look
 
