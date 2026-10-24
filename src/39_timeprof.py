@@ -10,8 +10,9 @@ This streams the log once into per (user, day, hour) second totals, so an honest
 profile can be cut at any date. Channel affinity already uses the whole log and is the
 single most used feature in the model; the time profiles were left on the 1/6 diet.
 """
+import os
 import sys, os, csv, time, calendar, numpy as np
-sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib
 
 OUT = lib.W + "time_prof.npz"

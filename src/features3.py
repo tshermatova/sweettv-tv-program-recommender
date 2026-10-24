@@ -4,8 +4,9 @@ The existing set measures how much and how popular. These measure the shape of t
 habit: how recently, how completely, how many weeks in a row, and whether the
 programme still airs in the slot and on the channel that user actually watches.
 """
+import os
 import sys, numpy as np
-sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib
 
 _AR = np.load(lib.W + "airings_raw.npy")                       # show, channel, start

@@ -2,8 +2,9 @@
 Fitted on the (window A -> window B) pair -- both inside the training weeks 11-30 --
 then applied with the full weeks 11-30 history to rank candidates for weeks 31-42.
 Week 31-42 viewing is never used; only that window's broadcast grid is."""
+import os
 import sys, time, numpy as np
-sys.path.insert(0,"/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib, features
 from sklearn.linear_model import LogisticRegression
 t0=time.time()

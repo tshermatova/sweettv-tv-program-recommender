@@ -1,7 +1,7 @@
 """Airing counts per (show, window) and per (show, channel, window) from the schedule."""
 import csv, pickle, calendar, numpy as np
 from collections import Counter, defaultdict
-D="/Users/tshermatova/Downloads/week7-exam/data/"; W="/Users/tshermatova/Downloads/week7-exam/work/"
+D=ROOT + "data/"; W=ROOT + "work/"
 def ts(s): return calendar.timegm((int(s[6:10]),int(s[3:5]),int(s[0:2]),int(s[11:13]),int(s[14:16]),int(s[17:19]),0,0,0))
 # window boundaries (epoch, UTC)
 B_AB = ts("18.05.2020 00:00:00")   # end of feature window A / start of target window B

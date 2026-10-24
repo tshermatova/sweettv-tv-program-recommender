@@ -9,8 +9,9 @@ The four collaborative scores are read from the cached feature matrix (columns 2
 FEATS2), which is where the final model sees them, so the numbers here and the numbers
 the ranker is given are the same numbers.
 """
+import os
 import sys, importlib, numpy as np
-sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib, features
 
 ex = importlib.import_module("33_extra")

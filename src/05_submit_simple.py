@@ -1,7 +1,7 @@
 import numpy as np, pickle, csv, os
 from collections import Counter, defaultdict
-W="/Users/tshermatova/Downloads/week7-exam/work/"; D="/Users/tshermatova/Downloads/week7-exam/data/"
-S="/Users/tshermatova/Downloads/week7-exam/submissions/"; os.makedirs(S, exist_ok=True)
+W=ROOT + "work/"; D=ROOT + "data/"
+S=ROOT + "submissions/"; os.makedirs(S, exist_ok=True)
 A=pickle.load(open(W+"airings.pkl","rb")); AIR=A["airings"]
 airT=AIR["T"]; airT_set=set(airT)
 M=np.load(W+"matches.npy"); users=open(W+"users.txt").read().split("\n")

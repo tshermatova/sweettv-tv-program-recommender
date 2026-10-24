@@ -1,7 +1,8 @@
 """Vectorised candidate generation and feature construction."""
+import os
 import sys, numpy as np
 from collections import Counter
-sys.path.insert(0,"/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib
 
 _AR=np.load(lib.W+"airings_raw.npy")      # show, channel, start (sorted by start)

@@ -1,6 +1,7 @@
 """Section 7: pick two users, show every method's Top-5 side by side with titles."""
+import os
 import sys, numpy as np
-sys.path.insert(0,"/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib, features, methods, rerank
 from collections import Counter
 

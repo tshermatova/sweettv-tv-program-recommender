@@ -12,8 +12,9 @@ block pushes on completeness and on repeat timing instead:
 Everything is computed from the history window only; the airing columns use the
 target window's broadcast grid, which carries no viewing behaviour.
 """
+import os
 import sys, numpy as np
-sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib
 
 _AR = np.load(lib.W + "airings_raw.npy")                       # show, channel, start

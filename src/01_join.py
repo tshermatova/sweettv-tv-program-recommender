@@ -1,7 +1,7 @@
 """Interval join: view log x broadcast schedule -> user-programme interactions."""
 import csv, time, calendar, numpy as np, os
-D = "/Users/tshermatova/Downloads/week7-exam/data/"
-OUT = "/Users/tshermatova/Downloads/week7-exam/work/"
+D = ROOT + "data/"
+OUT = ROOT + "work/"
 os.makedirs(OUT, exist_ok=True)
 t0 = time.time()
 

@@ -1,6 +1,7 @@
 """Build the second hold-out: evaluation set, its three training windows, and extras."""
+import os
 import sys, importlib
-sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 c2 = importlib.import_module("30_cache2")
 ex = importlib.import_module("33_extra")
 

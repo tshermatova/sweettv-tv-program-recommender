@@ -8,8 +8,9 @@ The four base methods are read straight out of the cached feature matrix (column
 of FEATS2 are assoc / ppr / cbf / mf, fitted on the same history window), so nothing is
 recomputed and nothing can drift between this table and the model that was scored.
 """
+import os
 import sys, time, importlib, numpy as np
-sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib, features, features2
 from collections import Counter
 

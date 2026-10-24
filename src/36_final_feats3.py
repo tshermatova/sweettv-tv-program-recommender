@@ -8,8 +8,9 @@ stops at week 30, so no viewing behaviour from the test window exists to leak.
 
 Optionally rank-averages several seeds (--seeds N).
 """
+import os
 import sys, time, importlib, numpy as np, pickle
-sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib, features, features2, features3
 import lightgbm as lgb
 

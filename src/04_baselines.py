@@ -1,6 +1,6 @@
 import numpy as np, pickle, csv
 from collections import Counter, defaultdict
-W="/Users/tshermatova/Downloads/week7-exam/work/"; D="/Users/tshermatova/Downloads/week7-exam/data/"
+W=ROOT + "work/"; D=ROOT + "data/"
 A=pickle.load(open(W+"airings.pkl","rb")); AIR=A["airings"]; B_AB=A["B_AB"]
 M=np.load(W+"matches.npy")
 users=open(W+"users.txt").read().split("\n")

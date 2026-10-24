@@ -3,7 +3,7 @@ Kaggle anchors (public): popularity 0.29788 | repeat-count 0.40024 | repeat x lo
                          repeat-seconds 0.29356 | repeat no-threshold 0.37887"""
 import numpy as np, pickle, csv
 from collections import Counter, defaultdict
-W="/Users/tshermatova/Downloads/week7-exam/work/"; D="/Users/tshermatova/Downloads/week7-exam/data/"
+W=ROOT + "work/"; D=ROOT + "data/"
 A=pickle.load(open(W+"airings.pkl","rb")); AIR=A["airings"]; B_AB=A["B_AB"]
 M=np.load(W+"matches.npy"); users=open(W+"users.txt").read().split("\n")
 uidx={u:i for i,u in enumerate(users)}

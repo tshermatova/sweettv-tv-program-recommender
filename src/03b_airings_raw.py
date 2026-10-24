@@ -1,5 +1,5 @@
 import csv, calendar, numpy as np
-D="/Users/tshermatova/Downloads/week7-exam/data/"; W="/Users/tshermatova/Downloads/week7-exam/work/"
+D=ROOT + "data/"; W=ROOT + "work/"
 def ts(s): return calendar.timegm((int(s[6:10]),int(s[3:5]),int(s[0:2]),int(s[11:13]),int(s[14:16]),int(s[17:19]),0,0,0))
 rows=[]; seen=set()
 for fn in ["export_arh_11-20-final.csv","export_arh_21-30-final.csv","export_arh_31-42-final.csv"]:

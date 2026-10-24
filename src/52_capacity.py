@@ -4,8 +4,9 @@
 label leaves 2.05% — the signal is nearly half as dense, and the optimum moves with it.
 Measured on the 41-feature base, which is the configuration actually shipped.
 """
+import os
 import sys, time, importlib, numpy as np
-sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib, features
 import lightgbm as lgb
 lab = importlib.import_module("31_lab"); cache2 = importlib.import_module("30_cache2")

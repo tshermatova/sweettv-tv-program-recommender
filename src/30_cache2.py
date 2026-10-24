@@ -4,8 +4,9 @@ Hold-out regime only: every training window lies entirely before B_AB (2020-05-1
 the evaluation set ("outer") takes history < B_AB and the airing grid B_AB..B_TEST.
 Identical geometry to src/25_graded.py, which produced the recorded 0.54464.
 """
+import os
 import sys, os, time, calendar, gc, numpy as np
-sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib, features, features2
 
 N_POP = int(os.environ.get("N_POP", 80))   # global-popularity candidates per user

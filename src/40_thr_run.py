@@ -6,8 +6,9 @@ script prints one line; run it once per threshold and compare the lines.
 
     FEAT_THR=0.10 python3 src/40_thr_run.py
 """
+import os
 import sys, time, importlib, numpy as np
-sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib
 
 lab = importlib.import_module("31_lab")

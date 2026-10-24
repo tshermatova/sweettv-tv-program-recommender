@@ -1,6 +1,7 @@
 """Extended collaborative signal block: several parameterisations per family."""
+import os
 import sys, numpy as np
-sys.path.insert(0,"/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib, methods
 
 KEYS=["assoc_conf","assoc_lift","cos","ppr85","ppr50","mf64","mf16","cov"]

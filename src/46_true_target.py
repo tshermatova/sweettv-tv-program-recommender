@@ -6,8 +6,9 @@ the five most frequent airings with screen time >= 0.8 — exactly five per user
 number measured before this script was therefore optimistic and chose features against
 the wrong objective.
 """
+import os
 import sys, time, importlib, numpy as np
-sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib, features
 import lightgbm as lgb
 

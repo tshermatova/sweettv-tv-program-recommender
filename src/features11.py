@@ -11,8 +11,9 @@ could not have been watched because it had not aired yet. Under the real target 
 frequency of qualifying airings — that distinction matters, because a premiere starts
 everyone's count at zero while a long-running programme has an established pattern.
 """
+import os
 import sys, numpy as np
-sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib
 
 FEATS11 = ["air_train", "air_train_4w", "days_since_air", "is_premiere",

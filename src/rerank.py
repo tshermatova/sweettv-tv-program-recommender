@@ -5,9 +5,10 @@ Nested design, so the hold-out is never fitted on:
   OUTER  features < 2020-05-18          labels 2020-05-18..2020-07-27   -> selection / reporting
   FINAL  features all of weeks 11-30    predictions for weeks 31-42
 """
+import os
 import sys, numpy as np, calendar
 from collections import Counter, defaultdict
-sys.path.insert(0,"/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib, methods
 
 def ts(y,m,d): return calendar.timegm((y,m,d,0,0,0,0,0,0))

@@ -1,6 +1,7 @@
 """Does encoding the target's ordering in the label beat plain top-5 membership?"""
+import os
 import sys, time, importlib, numpy as np
-sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib, features
 import lightgbm as lgb
 lab = importlib.import_module("31_lab"); cache2 = importlib.import_module("30_cache2")

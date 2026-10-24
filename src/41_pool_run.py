@@ -5,8 +5,9 @@ the current pool is 0.85963 against a model at 0.564, so the pool is not the bin
 constraint — but a wider pool was last tested with 30 features and 800 trees, when the
 model lost 0.003 to the extra noise. A stronger model may now absorb it.
 """
+import os
 import sys, importlib
-sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib
 lab = importlib.import_module("31_lab")
 cache2 = importlib.import_module("30_cache2")

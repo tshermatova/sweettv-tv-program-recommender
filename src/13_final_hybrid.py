@@ -1,7 +1,8 @@
 """Final model: ranker fitted on the (window A -> window B) pair, both inside the
 training weeks 11-30; applied with the full 11-30 history to predict weeks 31-42."""
+import os
 import sys, time, numpy as np
-sys.path.insert(0,"/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib, methods, rerank
 from sklearn.linear_model import LogisticRegression
 t0=time.time()

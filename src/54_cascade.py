@@ -14,8 +14,9 @@ Cheap by design, because this is a screen, not a final model:
 Stage 2 sees the 41 features plus what stage 1 thought: its score, the candidate's rank
 within the user, and the gap to that user's best candidate.
 """
+import os
 import sys, time, importlib, numpy as np
-sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib, features
 import lightgbm as lgb
 

@@ -12,8 +12,9 @@ metric, but recall is not a model-selection statistic and is not affected by tha
 Measures, for each configuration: recall over all relevant items, and the MAP@5 ceiling
 (min(hits,5)/min(|R|,5) averaged over users), which is what actually bounds the score.
 """
+import os
 import sys, importlib, time, numpy as np
-sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib, features
 
 ex = importlib.import_module("33_extra")

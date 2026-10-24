@@ -1,5 +1,6 @@
+import os
 import sys, time, calendar, numpy as np, os, gc
-sys.path.insert(0,"/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib, features, features2, collab2
 import lightgbm as lgb
 t0=time.time()

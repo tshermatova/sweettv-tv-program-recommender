@@ -1,6 +1,6 @@
 import csv, sys, time
 from collections import Counter
-D = "/Users/tshermatova/Downloads/week7-exam/data/"
+D = ROOT + "data/"
 t0 = time.time()
 
 # ---- submission ----

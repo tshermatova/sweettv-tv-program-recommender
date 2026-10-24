@@ -10,8 +10,9 @@ tunes their weight against a signal that is weaker at test time.
 This script re-streams the log into per-day (user, channel, seconds) totals, so channel
 affinity can be recomputed with any cutoff.
 """
+import os
 import sys, os, csv, time, calendar, numpy as np
-sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib
 
 OUT = lib.W + "ch_day.npz"

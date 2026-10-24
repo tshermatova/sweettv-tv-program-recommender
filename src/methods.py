@@ -1,7 +1,8 @@
+import os
 """The four recommendation methods + popularity baseline. All fit on training data only."""
 import numpy as np, sys
 from collections import Counter, defaultdict
-sys.path.insert(0,"/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib
 
 def matrix(H, items=None):

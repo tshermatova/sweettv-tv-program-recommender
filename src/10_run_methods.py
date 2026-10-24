@@ -1,5 +1,6 @@
+import os
 import sys, time, numpy as np
-sys.path.insert(0,"/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib, methods
 from collections import Counter
 

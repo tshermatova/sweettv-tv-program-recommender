@@ -1,4 +1,5 @@
-import sys; sys.path.insert(0,"/Users/tshermatova/Downloads/week7-exam/src")
+import os
+import sys; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib, numpy as np
 HA, GT = lib.val_split()
 print("users with history in A:", len(HA))

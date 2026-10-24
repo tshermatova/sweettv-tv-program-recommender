@@ -10,8 +10,9 @@ Both models are fitted on the same three final-regime windows and the same 41 fe
 Predictions are combined by within-user reciprocal rank, which is scale-free; the raw
 scores of a lambdarank model and a YetiRank model are not comparable.
 """
+import os
 import sys, time, importlib, numpy as np
-sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib, features
 import lightgbm as lgb
 from catboost import CatBoostRanker, Pool

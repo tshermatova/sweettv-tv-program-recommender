@@ -4,8 +4,9 @@ Two separate things live here because both depend on a time cutoff:
   * extras(tag)      -> the 11 FEATS3 columns for a cached window
   * ch_fix(tag)      -> honest ch_aff / ch_rank for columns 21 / 22 of the base X
 """
+import os
 import sys, os, importlib, numpy as np
-sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib, features, features2, features3, features4, features5, features6, features7, features8, features9, features10, features11
 
 cache2 = importlib.import_module("30_cache2")

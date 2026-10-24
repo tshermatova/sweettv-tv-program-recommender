@@ -1,5 +1,6 @@
+import os
 import sys, numpy as np
-sys.path.insert(0,"/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib, features
 from collections import Counter
 GT=lib.target(lo=lib.B_AB,hi=lib.B_TEST)

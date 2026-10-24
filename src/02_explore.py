@@ -1,5 +1,5 @@
 import numpy as np, pickle, time
-W = "/Users/tshermatova/Downloads/week7-exam/work/"
+W = ROOT + "work/"
 M = np.load(W+"matches.npy")   # ui, show, overlap, prog_dur, prog_start
 ui, sid, ov, pdur, pst = M[:,0], M[:,1], M[:,2], M[:,3], M[:,4]
 print("events:", len(M))

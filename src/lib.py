@@ -2,7 +2,9 @@
 import os, numpy as np, pickle, csv
 from collections import Counter, defaultdict
 
-ROOT="/Users/tshermatova/Downloads/week7-exam/"
+# Repository root, derived from this file's own location so the code runs from any
+# checkout rather than only from the machine it was written on.
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/"
 W=ROOT+"work/"; D=ROOT+"data/"; S=ROOT+"submissions/"
 FEAT_THR = float(os.environ.get("FEAT_THR", 0.20))   # "watched" for history/features
 # ABS_SEC: when set, "watched" means at least this many seconds of overlap, regardless of

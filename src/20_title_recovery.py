@@ -1,6 +1,6 @@
 """Can tv_show_id be recovered for unlabelled airtime via tv_show_title?"""
 import csv, collections
-D="/Users/tshermatova/Downloads/week7-exam/data/"
+D=ROOT + "data/"
 title2ids=collections.defaultdict(collections.Counter)
 n_lab=n_unlab=0; unlab_titles=collections.Counter(); blank=0
 for fn in ["export_arh_11-20-final.csv","export_arh_21-30-final.csv","export_arh_31-42-final.csv"]:

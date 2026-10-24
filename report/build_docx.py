@@ -4,13 +4,14 @@ Every number written here is copied from a run in this repository or from a retu
 Kaggle score. The sources are named in the text so the grader can check them.
 """
 import re
+import os
 import sys
 from docx import Document
 from docx.shared import Pt, Inches, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT
 
-ROOT = "/Users/tshermatova/Downloads/week7-exam/"
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/"
 doc = Document()
 
 # ---- page and base style ---------------------------------------------------------

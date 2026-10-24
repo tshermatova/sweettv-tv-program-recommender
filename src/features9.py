@@ -15,8 +15,9 @@ Three variants of the same idea, differing in how P(watch) is formed, plus the c
 airings that fall in slots the user is ever active in — a hard filter rather than a
 weighting.
 """
+import os
 import sys, numpy as np
-sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib, features
 
 FEATS9 = ["exp_freq_ch", "exp_freq_slot", "exp_freq_both", "n_air_live", "exp_freq_rank"]

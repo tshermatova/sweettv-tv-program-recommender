@@ -11,8 +11,9 @@ them:
   * the programme's own stickiness, averaged over all viewers — a property of the
     content rather than of the person
 """
+import os
 import sys, importlib, numpy as np
-sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib
 
 tp = importlib.import_module("39_timeprof")

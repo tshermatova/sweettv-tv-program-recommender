@@ -10,8 +10,9 @@ own history boundary.
 Measured before building anything: the hold-out answers this in ten minutes, a build
 takes forty-five and would have to be thrown away if the answer is no.
 """
+import os
 import sys, time, importlib, numpy as np
-sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib, features
 import lightgbm as lgb
 lab = importlib.import_module("31_lab"); cache2 = importlib.import_module("30_cache2")

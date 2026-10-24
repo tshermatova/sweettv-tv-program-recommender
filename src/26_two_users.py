@@ -1,6 +1,7 @@
 """Section 7: two chosen users, every method's Top-5 side by side, with titles."""
+import os
 import sys, numpy as np, pickle
-sys.path.insert(0,"/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib, features, features2, methods
 import lightgbm as lgb
 from collections import Counter

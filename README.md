@@ -37,6 +37,14 @@ python3 src/36_final_feats3.py --big --seeds 5 --top5 --per-seed --name sub25_to
 
 ## Reproducing
 
+**The competition data is not in this repository and must not be**: it is 890 MB, and
+the competition rules forbid redistributing it. Download it from Kaggle with your own
+account (the rules must be accepted first, or the download returns 403). Everything else
+— code, the final submission file, the notebook, the report — is here.
+
+All paths are derived from each file's own location, so the repository runs from any
+checkout.
+
 ```
 pip install lightgbm numpy scipy scikit-learn
 kaggle competitions download -c sweettv-tv-program-recommender -p data/ && unzip -d data/ data/*.zip

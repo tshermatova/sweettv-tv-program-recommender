@@ -4,8 +4,9 @@ features11 uses only the schedule, which the competition supplies for weeks 31-4
 part of the task, so it carries none of the channel-views leak that invalidated the
 first features9 measurement.
 """
+import os
 import sys, time, importlib, numpy as np
-sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib, features
 import lightgbm as lgb
 lab = importlib.import_module("31_lab"); cache2 = importlib.import_module("30_cache2")

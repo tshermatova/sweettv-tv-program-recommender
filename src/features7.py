@@ -10,8 +10,9 @@ so the ranker can tell a durable association from a stale one.
 They are appended alongside the full-history versions rather than replacing them; the
 comparison between the pair is itself the signal.
 """
+import os
 import sys, numpy as np
-sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib, features
 
 FEATS7 = ["assoc_rec", "ppr_rec", "cbf_rec", "mf_rec"]

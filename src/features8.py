@@ -8,8 +8,9 @@ comes from watch order rather than from co-occurrence anywhere in the window.
 Items seen fewer than three times get no embedding (min_count=3), so their features are
 zero — coverage is 83% of items on the final window and as low as 35% on the short ones.
 """
+import os
 import sys, os, numpy as np
-sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib, features
 
 FEATS8 = ["w2v_mean", "w2v_recent", "w2v_max", "w2v_rank", "w2v_known"]

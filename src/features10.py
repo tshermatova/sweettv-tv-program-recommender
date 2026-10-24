@@ -17,8 +17,9 @@ rather than a new idea:
   per_air  the estimate divided by the number of airings: probability per airing rather
            than total volume
 """
+import os
 import sys, numpy as np
-sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib, features
 
 FEATS10 = ["ef_decay", "ef_own_ch", "ef_comp", "ef_early", "ef_share", "ef_per_air"]

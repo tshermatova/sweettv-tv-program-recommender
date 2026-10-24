@@ -1,6 +1,7 @@
 """Score the shipped configuration under whatever 'watched' rule the environment sets."""
+import os
 import sys, importlib
-sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib
 lab = importlib.import_module("31_lab")
 cache2 = importlib.import_module("30_cache2")

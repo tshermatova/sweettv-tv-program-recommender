@@ -11,9 +11,10 @@ and the attributes of the candidate programme. Everything is computed from the h
 window; the schedule rows the attributes come from are static facts about a programme,
 not behaviour, so using them for the target window leaks nothing.
 """
+import os
 import sys, numpy as np
 from collections import Counter, defaultdict
-sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib
 
 FEATS6 = ["cat_aff", "genre_aff", "genre_top", "dir_aff", "act_aff",

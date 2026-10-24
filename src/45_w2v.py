@@ -13,8 +13,9 @@ as FEATURES instead: how close is the candidate to what this user has been watch
 Training is streamed and the model holds only a vocabulary of vectors (4 363 x 64), so it
 runs comfortably beside a LightGBM job that has the RAM.
 """
+import os
 import sys, os, time, numpy as np
-sys.path.insert(0, "/Users/tshermatova/Downloads/week7-exam/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib, features
 from gensim.models import Word2Vec
 
