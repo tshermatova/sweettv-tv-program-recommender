@@ -12,6 +12,7 @@ N_POP = int(os.environ.get("N_POP", 80))   # global-popularity candidates per us
 _SUF = "" if abs(lib.FEAT_THR - 0.20) < 1e-9 else f"_t{int(round(lib.FEAT_THR*100))}"
 _SUF += "" if N_POP == 80 else f"_p{N_POP}"
 _SUF += "" if lib.ABS_SEC is None else f"_a{int(lib.ABS_SEC)}"
+_SUF += "" if int(os.environ.get("CH_CAND", 0)) == 0 else f"_k{os.environ['CH_CAND']}"
 CACHE = lib.W + f"ds2{_SUF}/"
 os.makedirs(CACHE, exist_ok=True)
 _t0 = time.time()
